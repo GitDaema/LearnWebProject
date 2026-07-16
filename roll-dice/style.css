@@ -1,0 +1,143 @@
+:root {
+  --bg: #121218;
+  --panel: #1c1c26;
+  --accent: #6c5ce7;
+  --accent-light: #a29bfe;
+  --text: #f0f0f5;
+  --text-dim: #9a9aab;
+  --face-bg: #24243a;
+  --face-border: #3a3a55;
+  --dot: #f0f0f5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 20%, #1c1c2e 0%, var(--bg) 70%);
+  font-family: "Segoe UI", "Pretendard", -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text);
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 2rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.scene {
+  --cube-size: 120px;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  overflow: visible;
+}
+
+.cube {
+  position: relative;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  transform-style: preserve-3d;
+  transform: rotateX(-20deg) rotateY(30deg);
+  transition: transform 1.8s cubic-bezier(0.22, 1.15, 0.35, 1);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  background: var(--face-bg);
+  border: 1px solid var(--face-border);
+  border-radius: 16px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.35), 0 0 25px rgba(108, 92, 231, 0.08);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 18px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dot);
+  box-shadow: 0 0 6px rgba(240, 240, 245, 0.5);
+  place-self: center;
+}
+
+/* Each dot is pinned to one cell of the face's 3x3 pip grid, so it stays
+   exactly centered regardless of how many dots share the face. */
+.dot-tl { grid-row: 1; grid-column: 1; }
+.dot-tr { grid-row: 1; grid-column: 3; }
+.dot-ml { grid-row: 2; grid-column: 1; }
+.dot-mm { grid-row: 2; grid-column: 2; }
+.dot-mr { grid-row: 2; grid-column: 3; }
+.dot-bl { grid-row: 3; grid-column: 1; }
+.dot-br { grid-row: 3; grid-column: 3; }
+
+.face-1 { transform: translateZ(calc(var(--cube-size) / 2)); }
+.face-2 { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-3 { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-4 { transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-5 { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); }
+.face-6 { transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); }
+
+.result {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-dim);
+  min-height: 1.5em;
+}
+
+.result.show {
+  color: var(--accent-light);
+  font-weight: 600;
+}
+
+.roll-btn {
+  border: none;
+  outline: none;
+  padding: 0.85rem 2.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #8a7cf0);
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(108, 92, 231, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.roll-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(108, 92, 231, 0.45);
+}
+
+.roll-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.roll-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
