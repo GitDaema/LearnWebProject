@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주사위 굴리기</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="stage">
+    <h1 class="title">주사위 굴리기</h1>
+
+    <div class="scene">
+      <div class="cube" id="cube">
+        <div class="face face-1">
+          <span class="dot dot-mm"></span>
+        </div>
+        <div class="face face-2">
+          <span class="dot dot-tl"></span><span class="dot dot-br"></span>
+        </div>
+        <div class="face face-3">
+          <span class="dot dot-tl"></span><span class="dot dot-mm"></span><span class="dot dot-br"></span>
+        </div>
+        <div class="face face-4">
+          <span class="dot dot-tl"></span><span class="dot dot-tr"></span>
+          <span class="dot dot-bl"></span><span class="dot dot-br"></span>
+        </div>
+        <div class="face face-5">
+          <span class="dot dot-tl"></span><span class="dot dot-tr"></span>
+          <span class="dot dot-mm"></span>
+          <span class="dot dot-bl"></span><span class="dot dot-br"></span>
+        </div>
+        <div class="face face-6">
+          <span class="dot dot-tl"></span><span class="dot dot-tr"></span>
+          <span class="dot dot-ml"></span><span class="dot dot-mr"></span>
+          <span class="dot dot-bl"></span><span class="dot dot-br"></span>
+        </div>
+      </div>
+    </div>
+
+    <p class="result" id="result">주사위를 굴려보세요</p>
+
+    <button class="roll-btn" id="rollBtn">주사위 굴리기</button>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
