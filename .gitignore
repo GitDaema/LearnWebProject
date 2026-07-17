@@ -1,27 +1,41 @@
-# OS 임시 파일
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
 .DS_Store
-Thumbs.db
-desktop.ini
+*.pem
 
-# 에디터 / IDE
-.vscode/
-.idea/
-*.swp
-
-# Node
-node_modules/
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
+.pnpm-debug.log*
 
-# 빌드 산출물
-dist/
-build/
-.next/
-out/
+# env files (can opt-in for committing if needed)
+.env*
 
-# 환경 변수 / 민감 정보
-.env
-.env.local
-.env.*.local
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
