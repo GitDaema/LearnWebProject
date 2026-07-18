@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AcademicCard from '@/components/cards/AcademicCard';
 import { academicRecords, studentProfile } from '@/data/mockData';
 
@@ -10,8 +11,16 @@ const TYPE_LABELS: Record<'leave' | 'return' | 'dropout', string> = {
   dropout: '자퇴',
 };
 
-export default function AcademicPage() {
+function AcademicContent() {
+  const searchParams = useSearchParams();
   const [type, setType] = useState<'leave' | 'return' | 'dropout'>('leave');
+
+  useEffect(() => {
+    const typeParam = searchParams.get('type');
+    if (typeParam && ['leave', 'return', 'dropout'].includes(typeParam)) {
+      setType(typeParam as 'leave' | 'return' | 'dropout');
+    }
+  }, [searchParams]);
 
   return (
     <div className="max-w-4xl w-full mx-auto space-y-4">
@@ -20,10 +29,10 @@ export default function AcademicPage() {
           <button
             key={t}
             onClick={() => setType(t)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
               type === t
-                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800'
+                ? 'bg-amber-55 text-amber-600 border-amber-205 shadow-sm'
+                : 'bg-slate-50 text-slate-500 border-slate-200 hover:text-slate-800 hover:bg-slate-100'
             }`}
           >
             {TYPE_LABELS[t]} 신청
@@ -38,5 +47,13 @@ export default function AcademicPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function AcademicPage() {
+  return (
+    <Suspense fallback={<div className="text-slate-550 text-xs font-bold p-4 text-center">로딩 중...</div>}>
+      <AcademicContent />
+    </Suspense>
   );
 }

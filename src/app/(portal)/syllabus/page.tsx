@@ -15,10 +15,10 @@ export default function SyllabusPage() {
           <button
             key={s.code}
             onClick={() => setSelectedCode(s.code)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
               selectedCode === s.code
-                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-white hover:bg-slate-800'
+                ? 'bg-emerald-55 text-emerald-600 border-emerald-205 shadow-sm'
+                : 'bg-slate-50 text-slate-500 border-slate-200 hover:text-slate-800 hover:bg-slate-100'
             }`}
           >
             {s.subject}

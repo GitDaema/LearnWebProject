@@ -45,17 +45,17 @@ export default function AcademicCard({ data }: AcademicCardProps) {
   };
 
   return (
-    <div className="w-full bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all duration-300 hover:border-amber-500/30">
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl" />
+    <div className="w-full bg-white border border-slate-200/60 rounded-2xl p-6 shadow-lg shadow-slate-100 relative overflow-hidden transition-all duration-300 hover:border-amber-500/30">
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl" />
 
       {/* Header */}
-      <div className="mb-6 pb-6 border-b border-slate-800 flex items-center justify-between">
+      <div className="mb-6 pb-6 border-b border-slate-100 flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+          <h3 className="text-xl font-bold text-slate-800 mb-1 flex items-center gap-2">
             {getIcon(type)}
             {getTitle()}
           </h3>
-          <p className="text-slate-400 text-xs sm:text-sm">현재 학적 상태: <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded">{profile.status}</span></p>
+          <p className="text-slate-550 text-xs sm:text-sm">현재 학적 상태: <span className="text-emerald-600 font-bold bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">{profile.status}</span></p>
         </div>
       </div>
 
@@ -63,32 +63,32 @@ export default function AcademicCard({ data }: AcademicCardProps) {
       {!submitted ? (
         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
           {/* Stepper Header */}
-          <div className="flex justify-between items-center bg-slate-800/40 border border-slate-800 p-3.5 rounded-xl text-xs sm:text-sm">
-            <span className={`flex items-center gap-1.5 font-bold ${step >= 1 ? 'text-amber-400' : 'text-slate-500'}`}>
-              <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center scale-90">1</span>
+          <div className="flex justify-between items-center bg-slate-50 border border-slate-200/60 p-3.5 rounded-xl text-xs sm:text-sm">
+            <span className={`flex items-center gap-1.5 font-bold ${step >= 1 ? 'text-amber-600' : 'text-slate-400'}`}>
+              <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center scale-90 text-slate-500">1</span>
               원서 작성
             </span>
-            <span className="text-slate-600">→</span>
-            <span className={`flex items-center gap-1.5 font-bold ${step >= 2 ? 'text-amber-400' : 'text-slate-500'}`}>
-              <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center scale-90">2</span>
+            <span className="text-slate-300">→</span>
+            <span className={`flex items-center gap-1.5 font-bold ${step >= 2 ? 'text-amber-600' : 'text-slate-400'}`}>
+              <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center scale-90 text-slate-500">2</span>
               지도교수 상담
             </span>
-            <span className="text-slate-600">→</span>
-            <span className={`flex items-center gap-1.5 font-bold ${step >= 3 ? 'text-amber-400' : 'text-slate-500'}`}>
-              <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center scale-90">3</span>
+            <span className="text-slate-300">→</span>
+            <span className={`flex items-center gap-1.5 font-bold ${step >= 3 ? 'text-amber-600' : 'text-slate-400'}`}>
+              <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center scale-90 text-slate-500">3</span>
               최종 승인
             </span>
           </div>
 
           {/* Form Input fields */}
-          <div className="space-y-3.5 bg-slate-800/20 border border-slate-800/60 p-4 rounded-xl">
+          <div className="space-y-3.5 bg-slate-50 border border-slate-200/65 p-4 rounded-xl">
             {type === 'leave' && (
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">휴학 종류 및 기간</label>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5">휴학 종류 및 기간</label>
                 <select 
                   value={formData.period}
                   onChange={(e) => setFormData({...formData, period: e.target.value})}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-300 focus:outline-none focus:border-amber-500/50"
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-700 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-400"
                 >
                   <option>1개 학기 (2026학년도 2학기)</option>
                   <option>2개 학기 (2026-2학기 ~ 2027-1학기)</option>
@@ -99,11 +99,11 @@ export default function AcademicCard({ data }: AcademicCardProps) {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5">신청 사유</label>
+              <label className="block text-xs font-bold text-slate-500 mb-1.5">신청 사유</label>
               <select 
                 value={formData.reason}
                 onChange={(e) => setFormData({...formData, reason: e.target.value})}
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-300 focus:outline-none focus:border-amber-500/50"
+                className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-700 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-400"
                 required
               >
                 <option value="">-- 사유를 선택하세요 --</option>
@@ -133,12 +133,12 @@ export default function AcademicCard({ data }: AcademicCardProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5">상세 사유 기술</label>
+              <label className="block text-xs font-bold text-slate-500 mb-1.5">상세 사유 기술</label>
               <textarea 
                 placeholder="상세 내용을 입력하세요."
                 value={formData.detailedReason}
                 onChange={(e) => setFormData({...formData, detailedReason: e.target.value})}
-                className="w-full h-20 bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-300 focus:outline-none focus:border-amber-500/50 resize-none"
+                className="w-full h-20 bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-700 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-400 resize-none"
                 required
               />
             </div>
@@ -149,40 +149,40 @@ export default function AcademicCard({ data }: AcademicCardProps) {
               <button 
                 type="button" 
                 onClick={() => setStep(2)}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-700/50 active:scale-95 transition-all"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-200 cursor-pointer active:scale-95 transition-all"
               >
                 지도교수 정보 확인
               </button>
             )}
             <button 
               type="submit" 
-              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-extrabold px-5 py-2.5 rounded-xl active:scale-95 transition-all shadow-lg shadow-amber-500/10"
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-105 text-white text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer active:scale-95 transition-all shadow-md shadow-amber-500/10"
             >
               신청서 임시저장 및 제출
             </button>
           </div>
         </form>
       ) : (
-        <div className="bg-slate-800/30 border border-slate-800 rounded-xl p-6 text-center mb-6 space-y-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
+        <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-6 text-center mb-6 space-y-4">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-250 flex items-center justify-center mx-auto text-emerald-600">
             <CheckCircle className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="font-bold text-white text-base">신청서 접수 완료</h4>
-            <p className="text-xs text-slate-400 mt-1.5">
+            <h4 className="font-bold text-slate-800 text-base">신청서 접수 완료</h4>
+            <p className="text-xs text-slate-500 mt-1.5">
               원서가 정상적으로 임시저장되었습니다.<br />
               지도교수({profile.advisor}) 면담 승인 후 대학 학적과로 자동 인계됩니다.
             </p>
           </div>
-          <div className="text-[11px] bg-slate-900 border border-slate-800/80 p-3 rounded-lg text-slate-300 inline-block text-left w-full max-w-sm space-y-1">
-            <div><span className="text-slate-500">· 신청유형:</span> {getTitle().split(' ')[0]}</div>
-            <div><span className="text-slate-500">· 제출일자:</span> {new Date().toLocaleDateString()}</div>
-            <div><span className="text-slate-500">· 사유구분:</span> {formData.reason}</div>
-            {type === 'leave' && <div><span className="text-slate-500">· 신청기간:</span> {formData.period}</div>}
+          <div className="text-[11px] bg-white border border-slate-200/60 p-3 rounded-lg text-slate-600 inline-block text-left w-full max-w-sm space-y-1">
+            <div><span className="text-slate-400">· 신청유형:</span> {getTitle().split(' ')[0]}</div>
+            <div><span className="text-slate-400">· 제출일자:</span> {new Date().toLocaleDateString()}</div>
+            <div><span className="text-slate-400">· 사유구분:</span> {formData.reason}</div>
+            {type === 'leave' && <div><span className="text-slate-400">· 신청기간:</span> {formData.period}</div>}
           </div>
           <button 
             onClick={() => { setSubmitted(false); setStep(1); }}
-            className="text-xs font-semibold text-amber-400 hover:underline block mx-auto"
+            className="text-xs font-bold text-amber-600 hover:underline block mx-auto cursor-pointer"
           >
             새로 작성하기
           </button>
@@ -191,30 +191,30 @@ export default function AcademicCard({ data }: AcademicCardProps) {
 
       {/* Academic change history list */}
       {records && records.length > 0 && (
-        <div className="border-t border-slate-800/80 pt-6">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">과거 학적 변동 내역</h4>
+        <div className="border-t border-slate-100 pt-6">
+          <h4 className="text-xs font-bold text-slate-450 uppercase tracking-wider mb-3 px-1">과거 학적 변동 내역</h4>
           <div className="space-y-2">
             {records.map((rec, index) => (
               <div 
                 key={index} 
-                className="bg-slate-900/50 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center text-xs sm:text-sm"
+                className="bg-slate-50 border border-slate-200/50 p-3.5 rounded-xl flex justify-between items-center text-xs sm:text-sm"
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    rec.type === 'leave' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
+                    rec.type === 'leave' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                   }`}>
                     <ArrowRightLeft className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="font-bold text-white">{rec.details}</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">신청일: {rec.requestDate}</div>
+                    <div className="font-bold text-slate-800">{rec.details}</div>
+                    <div className="text-[11px] text-slate-450 mt-0.5">신청일: {rec.requestDate}</div>
                   </div>
                 </div>
                 <div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                     rec.status === '승인' 
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                      : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+                      : 'bg-amber-50 text-amber-600 border-amber-100'
                   }`}>
                     {rec.status}
                   </span>

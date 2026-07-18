@@ -68,13 +68,17 @@ const getGradesTool: FunctionDeclaration = {
 
 const getTimetableTool: FunctionDeclaration = {
   name: 'get_timetable',
-  description: '홍길동의 시간표(학과별 시간표, 교수 시간표 등)를 조회합니다. "내 시간표 보여줘", "화요일 수업 뭐 있어?", "시간표 확인" 등에 매핑됩니다.',
+  description: '컴퓨터공학과의 학과별 개설 교과목 및 학과 시간표 정보를 조회합니다. "학과별 시간표 보여줘", "학과 개설 과목 알려줘", "개설 교과목 목록 확인" 등에 매핑됩니다.',
   parameters: {
     type: 'OBJECT' as any,
     properties: {
-      day: {
+      grade: {
+        type: 'INTEGER' as any,
+        description: '특정 학년 (1, 2, 3, 4). 생략하면 전체 학년의 과목이 조회됩니다.',
+      },
+      classification: {
         type: 'STRING' as any,
-        description: '특정 요일 (예: "월", "화", "수", "목", "금"). 생략하면 주간 전체 시간표가 반환됩니다.',
+        description: '특정 이수 구분 (예: "전필", "전선", "기전", "교필", "교선"). 생략하면 전체 구분이 조회됩니다.',
       },
     },
   },
@@ -136,90 +140,26 @@ const getExternalLinkTool: FunctionDeclaration = {
 };
 
 
-// 요일/교시 파싱 유틸리티
-// LLM에게 요일 추출을 맡기면 "금요일"과 "목요일"을 혼동하는 등 신뢰할 수 없으므로,
-// 시간표 관련 질문은 항상 이 결정적(deterministic) 파서로 요일/교시를 직접 추출한다.
-const DAY_NAMES: mockDb.TimetableItem['day'][] = ['월', '화', '수', '목', '금'];
-
-function extractDayAndPeriods(message: string): { day?: mockDb.TimetableItem['day']; periods: number[] } {
-  let day: mockDb.TimetableItem['day'] | undefined;
-  for (const d of DAY_NAMES) {
-    if (message.includes(`${d}요일`) || message.includes(`${d}욜`)) {
-      day = d;
-      break;
-    }
-  }
-  if (!day) {
-    for (const d of DAY_NAMES) {
-      if (message.includes(d)) {
-        day = d;
-        break;
-      }
-    }
-  }
-
-  // "1교시랑 7교시"처럼 여러 교시가 나열될 수 있으므로, 첫 번째 것만이 아니라 전부 수집한다.
-  const periods = Array.from(message.matchAll(/(\d+)\s*교시/g), (m) => parseInt(m[1], 10));
-
-  return { day, periods };
-}
-
-// "없"이 "있"보다 문장 뒤쪽에 나오면 부정 의문문("~없지?")으로 판단한다.
-// 한국어의 예/아니오는 사실 여부가 아니라 "질문자가 말한 내용이 맞는지"에 답하므로,
-// 부정 의문문에서는 영어와 반대 극성이 된다 ("없지?" 에 진짜 없으면 "예,").
-function isNegativeExistenceQuestion(message: string): boolean {
-  return message.lastIndexOf('없') > message.lastIndexOf('있');
-}
-
-function yesNoPrefix(factIsTrue: boolean, negativeQuestion: boolean): '예' | '아니오' {
-  const agreesWithAsker = negativeQuestion ? !factIsTrue : factIsTrue;
-  return agreesWithAsker ? '예' : '아니오';
-}
-
-// 요일/교시 정보를 바탕으로, 실제 데이터에 근거한 결정적인 답변 문장을 생성한다.
+// 학과 개설 교과목 정보를 바탕으로, 실제 데이터에 근거한 결정적인 답변 문장을 생성한다.
 function describeTimetable(
   message: string,
-  day: mockDb.TimetableItem['day'] | undefined,
-  periods: number[],
-  itemsForDay: mockDb.TimetableItem[]
+  grade: number | undefined,
+  classification: string | undefined,
+  items: mockDb.DepartmentSubject[]
 ): string {
-  if (day && periods.length > 0) {
-    const results = periods.map((period) => ({
-      period,
-      found: itemsForDay.find(t => t.period.includes(period)),
-    }));
-    const describeOne = (r: (typeof results)[number]) =>
-      r.found
-        ? `${r.period}교시에 [${r.found.subject}] 수업이 있습니다 (${r.found.professor}, ${r.found.room})`
-        : `${r.period}교시에는 수업이 없습니다`;
+  const count = items.length;
+  let spec = '컴퓨터공학과 개설 교과목';
+  if (grade && classification) spec = `컴퓨터공학과 ${grade}학년 ${classification} 개설 교과목`;
+  else if (grade) spec = `컴퓨터공학과 ${grade}학년 개설 교과목`;
+  else if (classification) spec = `컴퓨터공학과 ${classification} 개설 교과목`;
 
-    if (results.length === 1) {
-      const prefix = yesNoPrefix(!!results[0].found, isNegativeExistenceQuestion(message));
-      return `${prefix}, ${day}요일 ${describeOne(results[0])}.`;
-    }
-
-    const allHaveClass = results.every(r => r.found);
-    const noneHaveClass = results.every(r => !r.found);
-    if (allHaveClass || noneHaveClass) {
-      const prefix = yesNoPrefix(allHaveClass, isNegativeExistenceQuestion(message));
-      return `${prefix}, ${day}요일 ${results.map(describeOne).join(', ')}.`;
-    }
-
-    // 교시별 결과가 섞여 있으면 단일 예/아니오로 뭉개지 않고 교시별 사실만 정확히 안내한다.
-    return `${day}요일 ${results.map(describeOne).join(', ')}.`;
+  if (count === 0) {
+    return `조회된 ${spec}이 없습니다.`;
   }
-  if (day) {
-    if (itemsForDay.length === 0) {
-      return `${day}요일에는 등록된 수업이 없습니다.`;
-    }
-    const list = itemsForDay
-      .slice()
-      .sort((a, b) => a.period[0] - b.period[0])
-      .map(t => `${t.period.join(',')}교시 [${t.subject}](${t.professor}, ${t.room})`)
-      .join(', ');
-    return `${day}요일 시간표입니다: ${list}.`;
-  }
-  return '';
+
+  const listStr = items.slice(0, 3).map(t => `[${t.subject}](${t.professor} 교수, ${t.time})`).join(', ');
+  const suffix = count > 3 ? ` 외 ${count - 3}건` : '';
+  return `조회하신 ${spec}은 총 ${count}건 개설되어 있습니다. 주요 과목으로는 ${listStr}${suffix} 등이 있습니다.`;
 }
 
 // 2. Rule-based Fallback 로직 (API 키 미설정 시)
@@ -243,16 +183,20 @@ function handleFallbackIntent(message: string) {
     };
   }
 
-  if (msg.includes('시간표') || msg.includes('수업') || msg.includes('요일') || msg.includes('강의실') || msg.includes('교시')) {
-    const { day, periods } = extractDayAndPeriods(message);
-    const timetable = day
-      ? mockDb.timetableData.filter(t => t.day === day)
-      : mockDb.timetableData;
+  if (msg.includes('시간표') || msg.includes('수업') || msg.includes('요일') || msg.includes('강의실') || msg.includes('교시') || msg.includes('개설') || msg.includes('과목')) {
+    const gradeParam = msg.includes('1학년') ? 1 : msg.includes('2학년') ? 2 : msg.includes('3학년') ? 3 : msg.includes('4학년') ? 4 : undefined;
+    const classParam = msg.includes('전필') ? '전필' : msg.includes('전선') ? '전선' : msg.includes('기전') ? '기전' : msg.includes('교필') ? '교필' : msg.includes('교선') ? '교선' : undefined;
+
+    const timetable = mockDb.timetableData.filter(t => {
+      const matchGrade = !gradeParam || t.grade === gradeParam;
+      const matchClass = !classParam || t.classification === classParam;
+      return matchGrade && matchClass;
+    });
 
     return {
       intent: 'get_timetable',
-      args: { day },
-      text: describeTimetable(message, day, periods, timetable) || '홍길동 학생의 이번 학기 주간 시간표 정보입니다.',
+      args: { grade: gradeParam, classification: classParam },
+      text: describeTimetable(message, gradeParam, classParam, timetable),
       data: timetable
     };
   }
@@ -342,7 +286,7 @@ function handleFallbackIntent(message: string) {
   return {
     intent: null,
     args: null,
-    text: `안녕하세요, 봉황대학교 학사 정보 AI 안내원입니다. 성적 조회, 시간표 보기, 등록금 납부/환불 확인, 휴·복학 신청, 출결 확인, 강의계획서 조회 및 교내 서비스 바로가기 링크를 제공하고 있습니다. 궁금한 점을 편하게 질문해 주세요! \n(예시: "이번 학기 성적 어때?", "내일 시간표 보여줘", "휴학하고 싶어", "웹메일 링크 알려줘")`,
+    text: `안녕하세요, 원광대학교 학사 정보 AI 안내원입니다. 성적 조회, 시간표 보기, 등록금 납부/환불 확인, 휴·복학 신청, 출결 확인, 강의계획서 조회 및 교내 서비스 바로가기 링크를 제공하고 있습니다. 궁금한 점을 편하게 질문해 주세요! \n(예시: "이번 학기 성적 어때?", "내일 시간표 보여줘", "휴학하고 싶어", "웹메일 링크 알려줘")`,
     data: null
   };
 }
@@ -392,7 +336,7 @@ export async function POST(req: NextRequest) {
       externalLinks: mockDb.externalLinks,
     };
 
-    const systemPrompt = `당신은 봉황대학교의 공식 학사정보 AI 어시스턴트입니다.
+    const systemPrompt = `당신은 원광대학교의 공식 학사정보 AI 어시스턴트입니다.
 학생의 이름은 홍길동, 학과는 컴퓨터공학과, 지도교수는 김교수입니다.
 
 아래는 홍길동 학생의 실제 학사 데이터베이스(JSON)입니다. "text" 답변을 작성할 때 반드시 이 데이터만 근거로 사용하고, 데이터에 없는 내용은 추측하지 마십시오.
@@ -407,7 +351,8 @@ ${JSON.stringify(studentDatabase)}
   "intent": "get_student_profile" | "get_grades" | "get_timetable" | "get_attendance" | "get_tuition_and_refund" | "get_syllabus" | "request_academic_change" | "get_external_link" | null,
   "args": {
     "semester": "2025학년도 1학기" 등 (get_grades인 경우에만 설정, 없으면 생략),
-    "day": "월" 등 (get_timetable인 경우에만 설정, 없으면 생략),
+    "grade": 1 등 (get_timetable인 경우에만 설정, 없으면 생략),
+    "classification": "전필" 등 (get_timetable인 경우에만 설정, 없으면 생략),
     "subject": "알고리즘" 등 (get_syllabus인 경우에만 설정, 없으면 생략),
     "type": "leave" | "return" | "dropout" (request_academic_change인 경우에만 설정, 없으면 생략),
     "service_name": "웹메일" 등 (get_external_link인 경우에만 설정, 없으면 생략)
@@ -418,7 +363,7 @@ ${JSON.stringify(studentDatabase)}
 의도(intent) 매핑 규칙:
 - "get_student_profile": 내 정보, 프로필, 지도교수 조회
 - "get_grades": 성적 단표, 평점, 학점 조회 (args.semester 선택 설정)
-- "get_timetable": 주간 시간표, 강의실 조회 (args.day 선택 설정)
+- "get_timetable": 컴퓨터공학과 개설 교과목 및 학과 시간표 조회 (args.grade 및 args.classification 선택 설정)
 - "get_attendance": 출결, 지각, 결석, 공결 조회
 - "get_tuition_and_refund": 등록금 고지서, 환불 신청 내역 조회
 - "get_syllabus": 강의계획서 검색 (args.subject에 과목명 필수 설정)
@@ -511,13 +456,16 @@ ${JSON.stringify(studentDatabase)}
           break;
         case 'get_timetable':
           {
-            // 요일/교시는 모델의 추출 결과를 신뢰하지 않고, 원문 메시지에서 직접 재추출하여 덮어쓴다.
-            const { day, periods } = extractDayAndPeriods(message);
-            args.day = day;
-            data = day
-              ? mockDb.timetableData.filter(t => t.day === day)
-              : mockDb.timetableData;
-            text = describeTimetable(message, day, periods, data) || text || '홍길동 님의 이번 학기 주간 시간표입니다.';
+            const gradeParam = args.grade ? parseInt(args.grade, 10) : undefined;
+            const classParam = args.classification;
+            
+            data = mockDb.timetableData.filter(t => {
+              const matchGrade = !gradeParam || t.grade === gradeParam;
+              const matchClass = !classParam || t.classification === classParam;
+              return matchGrade && matchClass;
+            });
+
+            text = describeTimetable(message, gradeParam, classParam, data);
           }
           break;
         case 'get_attendance':

@@ -1,184 +1,238 @@
 'use client';
 
-import React from 'react';
-import { Calendar, Clock, MapPin, User } from 'lucide-react';
-import { TimetableItem } from '@/data/mockData';
+import React, { useState, useMemo } from 'react';
+import { BookOpen, Search, User, MapPin, Clock, Award, Filter, RefreshCw } from 'lucide-react';
+import { DepartmentSubject } from '@/data/mockData';
 
 interface TimetableCardProps {
-  data: TimetableItem[];
+  data: DepartmentSubject[];
 }
 
-const DAYS = ['월', '화', '수', '목', '금'] as const;
-const PERIODS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-
-// 각 교시의 실제 시간 안내
-const PERIOD_TIMES: Record<number, string> = {
-  1: '09:00 - 10:00',
-  2: '10:00 - 11:00',
-  3: '11:00 - 12:00',
-  4: '12:00 - 13:00',
-  5: '13:00 - 14:00',
-  6: '14:00 - 15:00',
-  7: '15:00 - 16:00',
-  8: '16:00 - 17:00',
-  9: '17:00 - 18:00',
-};
-
-const DAY_MAP: Record<string, number> = {
-  '월': 1,
-  '화': 2,
-  '수': 3,
-  '목': 4,
-  '금': 5,
+const CLASSIFICATION_COLORS: Record<DepartmentSubject['classification'], string> = {
+  전필: 'bg-amber-50 text-amber-700 border-amber-200/80',
+  전선: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
+  기전: 'bg-sky-50 text-sky-705 border-sky-200/80',
+  교필: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
+  교선: 'bg-rose-50 text-rose-700 border-rose-200/80',
 };
 
 export default function TimetableCard({ data }: TimetableCardProps) {
+  const [selectedGrade, setSelectedGrade] = useState<number | 'all'>('all');
+  const [selectedClass, setSelectedClass] = useState<DepartmentSubject['classification'] | 'all'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // 필터 초기화
+  const handleResetFilters = () => {
+    setSelectedGrade('all');
+    setSelectedClass('all');
+    setSearchTerm('');
+  };
+
+  // 필터링 및 검색된 과목 목록 계산
+  const filteredSubjects = useMemo(() => {
+    return data.filter((item) => {
+      const matchGrade = selectedGrade === 'all' || item.grade === selectedGrade;
+      const matchClass = selectedClass === 'all' || item.classification === selectedClass;
+      
+      const cleanSearch = searchTerm.trim().toLowerCase();
+      const matchSearch = !cleanSearch || 
+        item.subject.toLowerCase().includes(cleanSearch) ||
+        item.professor.toLowerCase().includes(cleanSearch) ||
+        item.code.toLowerCase().includes(cleanSearch);
+
+      return matchGrade && matchClass && matchSearch;
+    });
+  }, [data, selectedGrade, selectedClass, searchTerm]);
+
   return (
-    <div className="w-full bg-slate-900/80 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all duration-300 hover:border-blue-500/30">
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
+    <div className="w-full bg-white border border-slate-200/60 rounded-2xl p-5 sm:p-6 shadow-lg shadow-slate-100 relative overflow-hidden transition-all duration-300 hover:border-blue-500/30">
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
 
       {/* Header */}
-      <div className="mb-6 pb-6 border-b border-slate-800 flex justify-between items-center">
+      <div className="mb-5 pb-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-blue-400" />
-            나의 주간 시간표
+          <h3 className="text-xl font-bold text-slate-850 mb-1 flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-blue-500" />
+            컴퓨터공학과 개설 교과목 정보
           </h3>
-          <p className="text-slate-400 text-xs sm:text-sm">2026학년도 1학기 등록된 수강 과목의 강의 시간 및 강의실 정보입니다.</p>
+          <p className="text-slate-500 text-xs sm:text-sm">2026학년도 1학기 컴퓨터공학과에 개설된 모든 과목의 시간 및 강의실 안내입니다.</p>
         </div>
       </div>
 
-      {/* Desktop Grid View */}
-      <div className="hidden md:block overflow-x-auto">
-        <div className="min-w-[650px]">
-          {/* Timetable Grid System */}
-          <div className="grid grid-cols-6 gap-2 text-center text-xs font-semibold text-slate-400 mb-2">
-            <div className="py-2 bg-slate-800/40 rounded-lg">교시</div>
-            {DAYS.map((day) => (
-              <div key={day} className="py-2 bg-slate-800/40 rounded-lg text-white">
-                {day}요일
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-6 gap-2 relative">
-            {/* Hour Labels (Left column) */}
-            <div className="flex flex-col gap-2">
-              {PERIODS.map((p) => (
-                <div 
-                  key={p} 
-                  className="h-20 bg-slate-800/20 border border-slate-800/50 rounded-xl flex flex-col justify-center items-center text-slate-400"
+      {/* Filter and Search Section - 피로도를 줄여주는 핵심 UI */}
+      <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-4 mb-5 space-y-3.5">
+        <div className="flex flex-wrap items-center gap-3.5 text-xs">
+          {/* 학년 필터 */}
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 font-bold">학년</span>
+            <div className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm">
+              {(['all', 1, 2, 3, 4] as const).map((grade) => (
+                <button
+                  key={grade}
+                  onClick={() => setSelectedGrade(grade)}
+                  className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                    selectedGrade === grade
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 >
-                  <span className="font-bold text-white text-sm">{p}교시</span>
-                  <span className="text-[10px] scale-90 text-slate-500">{PERIOD_TIMES[p].split(' - ')[0]}</span>
-                </div>
+                  {grade === 'all' ? '전체' : `${grade}학년`}
+                </button>
               ))}
             </div>
-
-            {/* Timetable grid cells background */}
-            {DAYS.map((day) => (
-              <div key={day} className="relative flex flex-col gap-2 h-full">
-                {PERIODS.map((p) => {
-                  // 해당 요일 및 교시에 해당하는 과목 정보 탐색
-                  const item = data.find(
-                    (t) => t.day === day && t.period.includes(p)
-                  );
-
-                  // 만약 해당 과목이 있고, 현재 교시가 수업의 시작 교시인 경우에만 렌더링
-                  // (그렇지 않으면 셀 크기가 늘어나므로 다른 중복 교시는 숨김)
-                  const isStartPeriod = item && item.period[0] === p;
-
-                  if (item) {
-                    if (isStartPeriod) {
-                      const duration = item.period.length;
-                      // h-20은 단일 교시 높이, gap-2가 8px이므로 총 높이 계산
-                      // (duration * 80px) + ((duration - 1) * 8px)
-                      const heightPx = duration * 80 + (duration - 1) * 8;
-                      // absolute 배치된 요소는 flex 정렬에서 빠지므로, 시작 교시 앞의 칸 수만큼
-                      // 직접 top으로 내려주지 않으면 실제 시작 교시와 무관하게 항상 맨 위(1교시)에 그려진다.
-                      const topPx = (item.period[0] - 1) * 80 + (item.period[0] - 1) * 8;
-
-                      return (
-                        <div
-                          key={`${day}-${p}`}
-                          style={{ height: `${heightPx}px`, top: `${topPx}px` }}
-                          className={`absolute w-full z-10 p-3 rounded-xl border flex flex-col justify-between transition-all hover:scale-[1.02] shadow-md ${item.color || 'bg-slate-800 border-slate-700 text-slate-300'}`}
-                        >
-                          <div>
-                            <div className="font-bold text-xs truncate">{item.subject}</div>
-                            <div className="text-[10px] opacity-75 mt-0.5 flex items-center gap-1">
-                              <User className="w-3 h-3 flex-shrink-0" />
-                              <span>{item.professor}</span>
-                            </div>
-                          </div>
-                          <div className="text-[10px] opacity-75 flex items-center gap-1 border-t border-white/10 pt-1.5 mt-1">
-                            <MapPin className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">{item.room}</span>
-                          </div>
-                        </div>
-                      );
-                    } else {
-                      // 시작 교시가 아니면 렌더링하지 않고 빈 공간을 유지 (absolute 배치이므로 아래 빈 placeholder를 채워야함)
-                      return <div key={`${day}-${p}`} className="h-20 opacity-0 pointer-events-none" />;
-                    }
-                  }
-
-                  // 비어 있는 교시
-                  return (
-                    <div 
-                      key={`${day}-${p}`} 
-                      className="h-20 border border-dashed border-slate-800/80 rounded-xl flex items-center justify-center text-slate-700/40 text-[10px]"
-                    >
-                      -
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
           </div>
+
+          {/* 이수구분 필터 */}
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 font-bold">이수구분</span>
+            <div className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm">
+              {(['all', '전필', '전선', '기전', '교필', '교선'] as const).map((cls) => (
+                <button
+                  key={cls}
+                  onClick={() => setSelectedClass(cls)}
+                  className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                    selectedClass === cls
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {cls === 'all' ? '전체' : cls}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 검색 및 필터 초기화 */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="교과목명, 담당교수, 학수번호로 빠른 검색..."
+              className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm outline-none focus:border-blue-400 transition-all font-medium text-slate-700 shadow-sm"
+            />
+          </div>
+          {(selectedGrade !== 'all' || selectedClass !== 'all' || searchTerm) && (
+            <button
+              onClick={handleResetFilters}
+              className="bg-white hover:bg-slate-100 text-slate-550 border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              필터 초기화
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Mobile Accordion/List View (Shown on small screens) */}
-      <div className="md:hidden space-y-4">
-        {DAYS.map((day) => {
-          const dayLessons = data.filter((t) => t.day === day).sort((a, b) => a.period[0] - b.period[0]);
-          if (dayLessons.length === 0) return null;
+      {/* Desktop Table View */}
+      <div className="hidden lg:block overflow-hidden rounded-xl border border-slate-200/60 shadow-sm bg-white">
+        <table className="w-full border-collapse text-left text-xs sm:text-sm">
+          <thead>
+            <tr className="bg-slate-50/75 border-b border-slate-200 font-bold text-slate-600">
+              <th className="py-3.5 px-4 font-bold">학년</th>
+              <th className="py-3.5 px-3 font-bold">구분</th>
+              <th className="py-3.5 px-3 font-bold">학수번호</th>
+              <th className="py-3.5 px-4 font-bold">교과목명</th>
+              <th className="py-3.5 px-3 font-bold text-center">분반</th>
+              <th className="py-3.5 px-3 font-bold text-center">학점</th>
+              <th className="py-3.5 px-4 font-bold">시간</th>
+              <th className="py-3.5 px-4 font-bold">담당교수</th>
+              <th className="py-3.5 px-4 font-bold">강의실</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {filteredSubjects.length > 0 ? (
+              filteredSubjects.map((item) => (
+                <tr key={`${item.code}-${item.classGroup}`} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="py-3 px-4 font-bold text-slate-500">{item.grade}학년</td>
+                  <td className="py-3 px-3">
+                    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${CLASSIFICATION_COLORS[item.classification]}`}>
+                      {item.classification}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 font-mono text-slate-400 font-bold">{item.code}</td>
+                  <td className="py-3 px-4 font-bold text-slate-800">{item.subject}</td>
+                  <td className="py-3 px-3 font-bold text-slate-550 text-center">{item.classGroup}분반</td>
+                  <td className="py-3 px-3 font-bold text-slate-650 text-center">{item.credits}학점</td>
+                  <td className="py-3 px-4 text-xs font-semibold text-slate-700 flex items-center gap-1.5 pt-4">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    {item.time}
+                  </td>
+                  <td className="py-3 px-4 font-bold text-slate-700">{item.professor} 교수</td>
+                  <td className="py-3 px-4">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-500 font-medium bg-slate-100 px-2 py-1 rounded-lg border border-slate-200/20">
+                      <MapPin className="w-3 h-3 text-slate-400" />
+                      {item.classroom}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={9} className="py-8 text-center text-slate-400 text-xs sm:text-sm font-medium">
+                  조건에 일치하는 개설 교과목이 없습니다.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-          return (
-            <div key={day} className="bg-slate-800/30 rounded-xl p-4 border border-slate-800/80">
-              <div className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-400" />
-                {day}요일 수업
+      {/* Mobile Card View (Shown on small/medium screens) - 눈이 피로하지 않은 레이아웃 */}
+      <div className="lg:hidden space-y-3">
+        {filteredSubjects.length > 0 ? (
+          filteredSubjects.map((item) => (
+            <div 
+              key={`${item.code}-${item.classGroup}`} 
+              className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 shadow-sm hover:border-blue-400/50 transition-all flex flex-col gap-2.5 relative"
+            >
+              {/* Badge line */}
+              <div className="flex justify-between items-center">
+                <div className="flex gap-1.5">
+                  <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded text-[9.5px] font-bold">
+                    {item.grade}학년
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[9.5px] font-bold border ${CLASSIFICATION_COLORS[item.classification]}`}>
+                    {item.classification}
+                  </span>
+                  <span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded text-[9.5px] font-bold">
+                    {item.credits}학점
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-bold font-mono">{item.code}</span>
               </div>
-              <div className="space-y-2">
-                {dayLessons.map((item) => (
-                  <div 
-                    key={`${item.subject}-${item.period.join('-')}`}
-                    className={`p-3 rounded-lg border flex justify-between items-center ${item.color || 'bg-slate-800 border-slate-700'}`}
-                  >
-                    <div>
-                      <div className="font-bold text-sm text-white">{item.subject}</div>
-                      <div className="text-xs text-slate-300 mt-1 flex items-center gap-3">
-                        <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{item.professor}</span>
-                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{item.room}</span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs font-bold bg-slate-900/50 text-slate-300 px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {item.period.join(', ')}교시
-                      </span>
-                      <div className="text-[10px] text-slate-400 mt-1">
-                        {PERIOD_TIMES[item.period[0]].split(' - ')[0]}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+
+              {/* Title & Division */}
+              <div>
+                <h4 className="font-bold text-slate-850 text-sm sm:text-base">{item.subject}</h4>
+                <div className="text-[10px] text-slate-400 mt-0.5 font-bold">{item.classGroup}분반</div>
+              </div>
+
+              {/* Detail row */}
+              <div className="grid grid-cols-2 gap-2 border-t border-slate-200/50 pt-2.5 text-xs text-slate-600">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <User className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <span className="truncate font-bold text-slate-700">{item.professor} 교수</span>
+                </div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <span className="truncate font-medium text-slate-500">{item.classroom}</span>
+                </div>
+                <div className="col-span-2 flex items-center gap-1.5 pt-0.5 font-semibold text-slate-700">
+                  <Clock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <span>{item.time}</span>
+                </div>
               </div>
             </div>
-          );
-        })}
+          ))
+        ) : (
+          <div className="bg-slate-50 border border-slate-200/50 rounded-xl p-8 text-center text-slate-400 text-xs font-medium">
+            조건에 일치하는 개설 교과목이 없습니다.
+          </div>
+        )}
       </div>
     </div>
   );
