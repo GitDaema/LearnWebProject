@@ -19,13 +19,16 @@ export interface AcademicRecord {
   details: string;
 }
 
-export interface TimetableItem {
-  subject: string;
-  professor: string;
-  room: string;
-  day: '월' | '화' | '수' | '목' | '금';
-  period: number[]; // 교시 예: [1, 2] -> 1, 2교시
-  color?: string; // Tailwind bg-color class
+export interface DepartmentSubject {
+  grade: number;            // 학년 (1~4)
+  classification: '전필' | '전선' | '기전' | '교필' | '교선'; // 구분
+  code: string;             // 학수번호
+  subject: string;          // 교과목명
+  classGroup: string;       // 분반
+  credits: number;          // 학점
+  time: string;             // 시간
+  professor: string;        // 담당교수
+  classroom: string;        // 강의실
 }
 
 export interface Syllabus {
@@ -143,12 +146,21 @@ export const academicRecords: AcademicRecord[] = [
   },
 ];
 
-export const timetableData: TimetableItem[] = [
-  { subject: '알고리즘', professor: '김교수', room: '공학관 402호', day: '월', period: [1, 2], color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-  { subject: '웹프로그래밍', professor: '박교수', room: 'IT관 203호', day: '화', period: [3, 4, 5], color: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
-  { subject: '인공지능개론', professor: '이교수', room: '공학관 501호', day: '수', period: [1, 2], color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
-  { subject: '컴퓨터네트워크', professor: '최교수', room: '공학관 301호', day: '목', period: [6, 7], color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-  { subject: '데이터베이스', professor: '정교수', room: 'IT관 305호', day: '금', period: [2, 3, 4], color: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
+export const timetableData: DepartmentSubject[] = [
+  { grade: 1, classification: '기전', code: 'CS101', subject: 'C프로그래밍실습', classGroup: 'A', credits: 3, time: '월 1,2 / 화 3', professor: '박교수', classroom: 'IT관 101호' },
+  { grade: 1, classification: '기전', code: 'CS101', subject: 'C프로그래밍실습', classGroup: 'B', credits: 3, time: '월 3,4 / 화 4', professor: '이교수', classroom: 'IT관 102호' },
+  { grade: 1, classification: '교필', code: 'CS103', subject: '컴퓨터학개론', classGroup: 'A', credits: 2, time: '목 1,2', professor: '김교수', classroom: '공학관 201호' },
+  { grade: 2, classification: '전필', code: 'CS201', subject: '자료구조', classGroup: 'A', credits: 3, time: '수 3,4 / 금 1', professor: '이교수', classroom: '공학관 403호' },
+  { grade: 2, classification: '전필', code: 'CS208', subject: '객체지향프로그래밍', classGroup: 'A', credits: 3, time: '화 1,2 / 목 3', professor: '최교수', classroom: 'IT관 205호' },
+  { grade: 2, classification: '전선', code: 'CS205', subject: '이산수학', classGroup: 'A', credits: 3, time: '월 5,6', professor: '김교수', classroom: '공학관 301호' },
+  { grade: 3, classification: '전필', code: 'CS301', subject: '알고리즘', classGroup: 'A', credits: 3, time: '월 1,2 / 수 5', professor: '김철수', classroom: '공학관 402호' },
+  { grade: 3, classification: '전선', code: 'CS302', subject: '웹프로그래밍', classGroup: 'A', credits: 3, time: '화 3,4,5', professor: '박교수', classroom: 'IT관 203호' },
+  { grade: 3, classification: '전선', code: 'CS302', subject: '웹프로그래밍', classGroup: 'B', credits: 3, time: '화 6,7,8', professor: '정교수', classroom: 'IT관 204호' },
+  { grade: 3, classification: '전필', code: 'CS305', subject: '인공지능개론', classGroup: 'A', credits: 3, time: '수 1,2 / 금 5', professor: '이교수', classroom: '공학관 501호' },
+  { grade: 3, classification: '전선', code: 'CS308', subject: '컴퓨터네트워크', classGroup: 'A', credits: 3, time: '목 6,7 / 금 6', professor: '최교수', classroom: '공학관 301호' },
+  { grade: 4, classification: '전필', code: 'CS401', subject: '캡스톤디자인', classGroup: 'A', credits: 3, time: '수 6,7,8', professor: '정교수', classroom: '공학관 502호' },
+  { grade: 4, classification: '전선', code: 'CS405', subject: '클라우드컴퓨팅', classGroup: 'A', credits: 3, time: '목 1,2,3', professor: '박교수', classroom: 'IT관 304호' },
+  { grade: 4, classification: '전선', code: 'CS408', subject: '정보보안론', classGroup: 'A', credits: 3, time: '금 1,2,3', professor: '이교수', classroom: 'IT관 305호' }
 ];
 
 export const syllabusData: Syllabus[] = [
@@ -277,7 +289,7 @@ export const currentTuition: TuitionInvoice = {
   scholarship: 1500000,
   netAmount: 2750000,
   bankName: '국민은행',
-  accountNumber: '942010-24-104200 (예금주: 봉황대학교)',
+  accountNumber: '942010-24-104200 (예금주: 원광대학교)',
   status: '납부완료',
   paymentDate: '2026-02-21',
 };
@@ -300,7 +312,7 @@ export const externalLinks: ExternalLink[] = [
   { name: '우편 증명발급 신청', url: 'https://post-cert.univ.ac.kr', description: '인터넷 발급 불가 서류 및 영문 원본 우편 발송 신청', category: '증명발급' },
   { name: '웹메일 서비스', url: 'https://mail.univ.ac.kr', description: '학교 공식 이메일 계정 (@univ.ac.kr)', category: '연결서비스' },
   { name: '종합웹정보시스템', url: 'https://wis.univ.ac.kr', description: '상세 학사 행정 및 수강 이력 관리 시스템', category: '연결서비스' },
-  { name: '봉황대학교 LLM 서비스', url: 'https://ai.univ.ac.kr', description: '교내 구성원 전용 학사 지원 AI 어시스턴트', category: '연결서비스' },
+  { name: '원광대학교 LLM 서비스', url: 'https://ai.univ.ac.kr', description: '교내 구성원 전용 학사 지원 AI 어시스턴트', category: '연결서비스' },
   { name: '봉황BBS (커뮤니티)', url: 'https://bbs.univ.ac.kr', description: '자유게시판, 장터, 스터디 모집 등 교내 공식 커뮤니티', category: '연결서비스' },
   { name: '수강신청관리 시스템', url: 'https://sugang.univ.ac.kr', description: '수강신청 희망과목 담기 및 본 수강신청 진행', category: '학사행정' },
   { name: '비밀번호 변경', url: 'https://wis.univ.ac.kr/change-pw', description: '종합정보시스템 비밀번호 변경 관리', category: '학사행정' },
