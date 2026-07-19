@@ -97,28 +97,12 @@ export default function HomeChat() {
       setApiKeyWarning(true);
     }
 
-    setMessages([
-      {
-        id: 'welcome',
-        sender: 'ai',
-        text: `안녕하세요, ${studentProfile.name} 학생! 원광대학교 학사 정보 AI 지원 서비스입니다.\n성적 조회, 수강 시간표, 출결 현황, 등록금 수납 및 환불 신청 등 궁금하신 학사 정보를 자연어로 물어보시면 즉시 전용 UI 카드로 안내해 드리겠습니다.`,
-        intent: 'get_student_profile',
-        data: studentProfile
-      }
-    ]);
+    setMessages([]);
   }, []);
 
   const handleResetChat = () => {
     setHasStartedChat(false);
-    setMessages([
-      {
-        id: 'welcome',
-        sender: 'ai',
-        text: `안녕하세요, ${studentProfile.name} 학생! 원광대학교 학사 정보 AI 지원 서비스입니다.\n성적 조회, 수강 시간표, 출결 현황, 등록금 수납 및 환불 신청 등 궁금하신 학사 정보를 자연어로 물어보시면 즉시 전용 UI 카드로 안내해 드리겠습니다.`,
-        intent: 'get_student_profile',
-        data: studentProfile
-      }
-    ]);
+    setMessages([]);
   };
 
   useEffect(() => {
