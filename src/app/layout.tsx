@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "봉황대학교 AI 웹정보서비스 | University Web Info Service",
+  title: "원광대학교 AI 웹정보서비스 | University Web Info Service",
   description: "자연어로 소통하는 지능형 AI Prompt Bar 기반의 대학 종합 웹정보서비스 포털입니다. 성적, 출결, 시간표, 등록금 등 다양한 학사 서비스를 즉시 렌더링합니다.",
 };
 

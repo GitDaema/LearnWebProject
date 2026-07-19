@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
+import {
   StudentProfile, SemesterGrade, AttendanceItem, TuitionInvoice,
   studentProfile as defaultProfile, gradeHistory as defaultGrades,
   attendanceData as defaultAttendance, currentTuition as defaultTuition
@@ -71,7 +71,7 @@ const suseokData: StudentData = {
     scholarship: 3000000, // 성적 장학금 300만원
     netAmount: 1250000,
     bankName: '국민은행',
-    accountNumber: '942010-24-104200 (예금주: 봉황대학교)',
+    accountNumber: '942010-24-104200 (예금주: 원광대학교)',
     status: '납부완료',
     paymentDate: '2026-02-20',
   }
@@ -132,7 +132,7 @@ const bulchamData: StudentData = {
     scholarship: 0, // 장학금 없음
     netAmount: 4250000,
     bankName: '국민은행',
-    accountNumber: '942010-24-104200 (예금주: 봉황대학교)',
+    accountNumber: '942010-24-104200 (예금주: 원광대학교)',
     status: '납부완료',
     paymentDate: '2026-02-21',
   }
@@ -193,7 +193,7 @@ const pyeongbeomData: StudentData = {
     scholarship: 1500000, // 국가장학금 150만원
     netAmount: 2750000,
     bankName: '국민은행',
-    accountNumber: '942010-24-104200 (예금주: 봉황대학교)',
+    accountNumber: '942010-24-104200 (예금주: 원광대학교)',
     status: '납부완료',
     paymentDate: '2026-02-21',
   }
