@@ -4,11 +4,13 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import GradeCard from '@/components/cards/GradeCard';
 import GraduationRequirementCard from '@/components/cards/GraduationRequirementCard';
-import { gradeHistory, graduationRequirement } from '@/data/mockData';
+import { useAuth } from '@/context/AuthContext';
+import { graduationRequirement } from '@/data/mockData';
 
 type GradesView = 'recent' | 'all' | 'completed';
 
 function GradesContent() {
+  const { studentData } = useAuth();
   const searchParams = useSearchParams();
   const [view, setView] = useState<GradesView>('recent');
 
@@ -18,14 +20,14 @@ function GradesContent() {
   }, [searchParams]);
 
   if (view === 'all') {
-    return <GradeCard data={gradeHistory} />;
+    return <GradeCard data={studentData.grades} />;
   }
 
   if (view === 'completed') {
-    return <GraduationRequirementCard grades={gradeHistory} requirement={graduationRequirement} />;
+    return <GraduationRequirementCard grades={studentData.grades} requirement={graduationRequirement} />;
   }
 
-  return <GradeCard data={gradeHistory[gradeHistory.length - 1]} />;
+  return <GradeCard data={studentData.grades[studentData.grades.length - 1]} />;
 }
 
 export default function GradesPage() {

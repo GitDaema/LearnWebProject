@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Bot, Menu, AlertCircle } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
-import { studentProfile } from '@/data/mockData';
+import { useAuth } from '@/context/AuthContext';
+import LoginScreen from '@/components/LoginScreen';
 
 const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'AI Prompt Portal', subtitle: '자연어로 대화하는 지능형 학사 안내원' },
@@ -19,6 +20,7 @@ const PAGE_META: Record<string, { title: string; subtitle: string }> = {
 };
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
+  const { currentUser, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const isHome = pathname === '/';
@@ -26,6 +28,18 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
   const hasKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
   const apiKeyWarning = isHome && (!hasKey || hasKey === 'your_api_key_here');
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#f5f7fb] flex items-center justify-center text-xs font-bold text-slate-500">
+        정보 확인 중...
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <LoginScreen />;
+  }
 
   return (
     <div className="flex min-h-screen bg-transparent">

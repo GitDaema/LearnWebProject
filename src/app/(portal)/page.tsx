@@ -21,7 +21,7 @@ import EnrollmentSummaryCard from '@/components/cards/EnrollmentSummaryCard';
 import ProfessorScheduleCard from '@/components/cards/ProfessorScheduleCard';
 import ManageShortcutsModal from '@/components/ManageShortcutsModal';
 
-import { studentProfile } from '@/data/mockData';
+import { useAuth } from '@/context/AuthContext';
 import { ALL_SHORTCUTS, DEFAULT_SHORTCUT_IDS, SHORTCUTS_STORAGE_KEY, ShortcutItem } from '@/data/shortcuts';
 
 // 대화 아이템 타입 정의
@@ -42,6 +42,8 @@ const RECOMMENDED_PROMPTS = [
 ];
 
 export default function HomeChat() {
+  const { studentData } = useAuth();
+  const { profile } = studentData;
   const router = useRouter();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -142,7 +144,7 @@ export default function HomeChat() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: textToSend })
+        body: JSON.stringify({ message: textToSend, studentData })
       });
 
       const data = await response.json();
@@ -219,7 +221,7 @@ export default function HomeChat() {
         {/* 1. 메인 환영 타이틀 */}
         <div className="flex flex-col items-start mb-8 select-none">
           <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
-            안녕하세요, {studentProfile.name}님 —
+            안녕하세요, {profile.name}님 —
           </h1>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 tracking-tight leading-tight mt-1.5">
             오늘도 좋은 하루 되세요.
