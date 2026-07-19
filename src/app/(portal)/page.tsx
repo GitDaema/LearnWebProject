@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search, Bot, Send, Sparkles, AlertCircle, RefreshCw, RotateCcw,
-  User, GraduationCap, Calendar, CheckSquare, Award,
-  CreditCard, FileText, Link as LinkIcon, Keyboard, Plus
+  User, Calendar, CheckSquare, Award,
+  CreditCard, Link as LinkIcon, Keyboard, Plus
 } from 'lucide-react';
 
 // UI Cards Import
@@ -17,8 +17,12 @@ import AcademicCard from '@/components/cards/AcademicCard';
 import TuitionCard from '@/components/cards/TuitionCard';
 import SyllabusCard from '@/components/cards/SyllabusCard';
 import LinkCard from '@/components/cards/LinkCard';
+import EnrollmentSummaryCard from '@/components/cards/EnrollmentSummaryCard';
+import ProfessorScheduleCard from '@/components/cards/ProfessorScheduleCard';
+import ManageShortcutsModal from '@/components/ManageShortcutsModal';
 
 import { studentProfile } from '@/data/mockData';
+import { ALL_SHORTCUTS, DEFAULT_SHORTCUT_IDS, SHORTCUTS_STORAGE_KEY, ShortcutItem } from '@/data/shortcuts';
 
 // 대화 아이템 타입 정의
 interface ChatMessage {
@@ -29,49 +33,6 @@ interface ChatMessage {
   data?: any;
   isFallback?: boolean;
 }
-
-const SHORTCUT_CARDS = [
-  {
-    id: 'attendance',
-    title: '출결조회',
-    description: '이번 학기 출석 현황',
-    path: '/attendance',
-    icon: <CheckSquare className="w-5 h-5 text-blue-500" />,
-    bg: 'bg-blue-50'
-  },
-  {
-    id: 'syllabus',
-    title: '강의계획서조회',
-    description: '강의 년도·학기별 계획서 조회',
-    path: '/syllabus',
-    icon: <FileText className="w-5 h-5 text-emerald-500" />,
-    bg: 'bg-emerald-50'
-  },
-  {
-    id: 'academic',
-    title: '공결신청',
-    description: '공식 사유 결석에 대한 출석 인정 신청',
-    path: '/attendance',
-    icon: <Award className="w-5 h-5 text-purple-500" />,
-    bg: 'bg-purple-50'
-  },
-  {
-    id: 'timetable',
-    title: '학과별시간표',
-    description: '학과별 강의 학년·학점·교수 확인',
-    path: '/timetable',
-    icon: <Calendar className="w-5 h-5 text-orange-500" />,
-    bg: 'bg-orange-50'
-  },
-  {
-    id: 'grades',
-    title: '성적단표내역조회',
-    description: '이번 학기 성적 내역',
-    path: '/grades',
-    icon: <GraduationCap className="w-5 h-5 text-indigo-500" />,
-    bg: 'bg-indigo-50'
-  }
-];
 
 const RECOMMENDED_PROMPTS = [
   { text: '내 성적 보여줘', icon: <Award className="w-3.5 h-3.5" /> },
@@ -88,7 +49,44 @@ export default function HomeChat() {
   const [apiKeyWarning, setApiKeyWarning] = useState(false);
   const [hasStartedChat, setHasStartedChat] = useState(false);
 
+  const [shortcutIds, setShortcutIds] = useState<string[]>(DEFAULT_SHORTCUT_IDS);
+  const [manageOpen, setManageOpen] = useState(false);
+  const didMountShortcutsRef = useRef(false);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // 저장된 나의 바로가기 구성 불러오기 (마운트 이후에만 실행 → 서버/클라이언트 첫 렌더 불일치 방지)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SHORTCUTS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const valid = Array.isArray(parsed)
+          ? parsed.filter((id) => ALL_SHORTCUTS.some((s) => s.id === id))
+          : [];
+        if (valid.length > 0) setShortcutIds(valid);
+      }
+    } catch {
+      // localStorage 접근 불가 시 기본값 유지
+    }
+  }, []);
+
+  // 나의 바로가기 구성이 바뀔 때마다 저장 (최초 마운트 시점은 건너뜀 → 기본값으로 덮어쓰는 것 방지)
+  useEffect(() => {
+    if (!didMountShortcutsRef.current) {
+      didMountShortcutsRef.current = true;
+      return;
+    }
+    try {
+      localStorage.setItem(SHORTCUTS_STORAGE_KEY, JSON.stringify(shortcutIds));
+    } catch {
+      // 저장 실패 무시
+    }
+  }, [shortcutIds]);
+
+  const myShortcuts = shortcutIds
+    .map((id) => ALL_SHORTCUTS.find((s) => s.id === id))
+    .filter((s): s is ShortcutItem => Boolean(s));
 
   // 첫 진입 시, 환영 메시지 추가 및 API Key 체크
   useEffect(() => {
@@ -190,6 +188,10 @@ export default function HomeChat() {
         return <SyllabusCard data={data} />;
       case 'get_external_link':
         return <LinkCard data={data} />;
+      case 'get_course_registration':
+        return <EnrollmentSummaryCard registrations={data.registrations} creditLimit={data.creditLimit} />;
+      case 'get_professor_timetable':
+        return <ProfessorScheduleCard directory={data.directory} schedule={data.schedule} initialProfessor={data.selectedProfessor} />;
       default:
         return null;
     }
@@ -198,8 +200,9 @@ export default function HomeChat() {
   // 1. 대화 시작 전 초기 대시보드 뷰 (Figma 이미지 완벽 대응)
   if (!hasStartedChat) {
     return (
+      <>
       <div className="flex-1 max-w-4xl w-full mx-auto flex flex-col justify-center px-2 py-4 sm:py-8">
-        
+
         {apiKeyWarning && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3.5 mb-6 text-slate-700 shadow-sm">
             <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -258,37 +261,62 @@ export default function HomeChat() {
         <div>
           <div className="flex justify-between items-center mb-5">
             <h2 className="text-base font-bold text-slate-800">나의 바로가기</h2>
-            <button className="bg-[#f1f3f9] hover:bg-[#e2e8f0] text-blue-600 font-bold text-xs px-3 py-1.5 rounded-full flex items-center gap-1 border border-slate-200/40 transition-all active:scale-97 select-none">
+            <button
+              onClick={() => setManageOpen(true)}
+              className="bg-[#f1f3f9] hover:bg-[#e2e8f0] text-blue-600 font-bold text-xs px-3 py-1.5 rounded-full flex items-center gap-1 border border-slate-200/40 transition-all active:scale-97 select-none cursor-pointer"
+            >
               <Plus className="w-3.5 h-3.5" />
               추가/관리
             </button>
           </div>
 
-          {/* 5개 바로가기 카드 그리드 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {SHORTCUT_CARDS.map((card) => (
+          {/* 나의 바로가기 카드 그리드 */}
+          {myShortcuts.length === 0 ? (
+            <div className="border border-dashed border-slate-200 rounded-2xl p-8 text-center">
+              <p className="text-xs text-slate-400 mb-3">아직 추가된 바로가기가 없습니다.</p>
               <button
-                key={card.id}
-                onClick={() => router.push(card.path)}
-                className="text-left bg-white p-5 rounded-2xl shadow-sm border border-slate-200/30 hover:border-indigo-500/20 shadow-slate-100 hover:shadow-md hover:shadow-indigo-500/5 hover:-translate-y-0.5 transition-all cursor-pointer group flex flex-col justify-between h-[135px]"
+                onClick={() => setManageOpen(true)}
+                className="bg-[#f1f3f9] hover:bg-[#e2e8f0] text-blue-600 font-bold text-xs px-3 py-1.5 rounded-full inline-flex items-center gap-1 border border-slate-200/40 transition-all active:scale-97 cursor-pointer"
               >
-                <div className={`w-10 h-10 rounded-xl ${card.bg} flex items-center justify-center`}>
-                  {card.icon}
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-850 text-sm sm:text-[15px] group-hover:text-indigo-600 transition-colors">
-                    {card.title}
-                  </h3>
-                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
-                    {card.description}
-                  </p>
-                </div>
+                <Plus className="w-3.5 h-3.5" />
+                바로가기 추가하기
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {myShortcuts.map((card) => (
+                <button
+                  key={card.id}
+                  onClick={() => router.push(card.path)}
+                  className="text-left bg-white p-5 rounded-2xl shadow-sm border border-slate-200/30 hover:border-indigo-500/20 shadow-slate-100 hover:shadow-md hover:shadow-indigo-500/5 hover:-translate-y-0.5 transition-all cursor-pointer group flex flex-col justify-between h-[135px]"
+                >
+                  <div className={`w-10 h-10 rounded-xl ${card.bg} flex items-center justify-center`}>
+                    {card.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-850 text-sm sm:text-[15px] group-hover:text-indigo-600 transition-colors">
+                      {card.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
+                      {card.description}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>
+
+      {manageOpen && (
+        <ManageShortcutsModal
+          shortcutIds={shortcutIds}
+          onShortcutIdsChange={setShortcutIds}
+          onClose={() => setManageOpen(false)}
+        />
+      )}
+      </>
     );
   }
 

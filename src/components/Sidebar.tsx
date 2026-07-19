@@ -66,8 +66,8 @@ const MENU_GROUPS: MenuGroup[] = [
         subItems: [
           { label: '강의계획서조회', path: '/syllabus' },
           { label: '수강신청관리(링크)', href: 'https://sugang.univ.ac.kr' },
-          { label: '수강신청조회', path: '/syllabus' },
-          { label: '수업평가실시', path: '/syllabus' }
+          { label: '수강신청조회', path: '/syllabus?view=enrollment' },
+          { label: '수업평가실시', path: '/syllabus?view=evaluation' }
         ]
       },
       {
@@ -84,8 +84,8 @@ const MENU_GROUPS: MenuGroup[] = [
         icon: <BarChart3 className="w-4 h-4" />,
         subItems: [
           { label: '성적단표내역조회', path: '/grades' },
-          { label: '이수과목확인리스트', path: '/grades' },
-          { label: '전체성적조회', path: '/grades' }
+          { label: '이수과목확인리스트', path: '/grades?view=completed' },
+          { label: '전체성적조회', path: '/grades?view=all' }
         ]
       },
       {
