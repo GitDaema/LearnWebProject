@@ -3,7 +3,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AcademicCard from '@/components/cards/AcademicCard';
-import { academicRecords, studentProfile } from '@/data/mockData';
+import { useAuth } from '@/context/AuthContext';
+import { academicRecords } from '@/data/mockData';
 
 const TYPE_LABELS: Record<'leave' | 'return' | 'dropout', string> = {
   leave: '휴학',
@@ -12,6 +13,7 @@ const TYPE_LABELS: Record<'leave' | 'return' | 'dropout', string> = {
 };
 
 function AcademicContent() {
+  const { studentData } = useAuth();
   const searchParams = useSearchParams();
   const [type, setType] = useState<'leave' | 'return' | 'dropout'>('leave');
 
@@ -43,7 +45,7 @@ function AcademicContent() {
         data={{
           type,
           records: academicRecords.filter(r => r.type === type),
-          profile: studentProfile,
+          profile: studentData.profile,
         }}
       />
     </div>

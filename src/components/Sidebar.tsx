@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   User, FileText, Calendar, BookOpen, Monitor, BarChart3, CreditCard, 
-  Globe, Mail, Bot, MessageSquare, ChevronDown, ExternalLink, X
+  Globe, Mail, Bot, MessageSquare, ChevronDown, ExternalLink, X, LogOut
 } from 'lucide-react';
-import { studentProfile } from '@/data/mockData';
+import { useAuth } from '@/context/AuthContext';
 
 interface SubMenuItem {
   label: string;
@@ -122,8 +122,10 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
-  const pathname = usePathname();
+  const { studentData, logout } = useAuth();
+  const { profile } = studentData;
   const router = useRouter();
+  const pathname = usePathname();
   const [openAccordion, setOpenAccordion] = useState<string | null>(null);
 
   const handleMenuClick = (label: string) => {
@@ -262,35 +264,33 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       {/* User Mini Profile Footer - Figma 스타일의 둥근 밝은색 카드 형태 */}
-      <div className="mt-4 flex-shrink-0">
+      <div className="mt-4 flex-shrink-0 bg-[#f1f3f9] border border-[#e2e8f0]/40 p-3 rounded-2xl flex items-center justify-between shadow-sm">
         <Link 
           href="/profile" 
           onClick={onClose} 
-          className="bg-[#f1f3f9] hover:bg-[#e2e8f0] border border-[#e2e8f0]/40 p-3.5 rounded-2xl flex items-center justify-between transition-all shadow-sm group hover:scale-[1.01]"
+          className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity"
         >
-          <div className="flex items-center gap-3">
-            {/* 파란색 둥근 아바타 ("홍") */}
-            <div className="w-9 h-9 rounded-full bg-[#3b82f6] flex items-center justify-center text-white text-xs font-bold shadow-sm">
-              {studentProfile.name.slice(0, 1)}
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900">{studentProfile.name}</div>
-              <div className="text-[9px] text-slate-500 mt-0.5 leading-normal">
-                학부: {studentProfile.major}
-                <br />
-                학번: {studentProfile.studentId}
-              </div>
-            </div>
+          {/* 파란색 둥근 아바타 */}
+          <div className="w-9 h-9 rounded-full bg-[#3b82f6] flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+            {profile.name.slice(0, 1)}
           </div>
-          {/* 점 세개 설정 아이콘 */}
-          <div className="text-slate-400 group-hover:text-slate-600 pr-1 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-more-horizontal w-4 h-4">
-              <circle cx="12" cy="12" r="1"></circle>
-              <circle cx="19" cy="12" r="1"></circle>
-              <circle cx="5" cy="12" r="1"></circle>
-            </svg>
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-slate-900 truncate">{profile.name}</div>
+            <div className="text-[9px] text-slate-500 mt-0.5 leading-normal truncate">
+              학부: {profile.major}
+              <br />
+              학번: {profile.studentId}
+            </div>
           </div>
         </Link>
+        {/* 로그아웃 버튼 */}
+        <button
+          onClick={logout}
+          title="로그아웃"
+          className="p-2 rounded-xl text-slate-400 hover:text-red-500 hover:bg-slate-200/50 transition-all cursor-pointer flex-shrink-0"
+        >
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
     </aside>
   );

@@ -186,8 +186,13 @@ function describeTimetable(
 }
 
 // 2. Rule-based Fallback 로직 (API 키 미설정 시)
-function handleFallbackIntent(message: string) {
+function handleFallbackIntent(message: string, studentData?: any) {
   const msg = message.toLowerCase();
+  
+  const activeProfile = studentData?.profile || mockDb.studentProfile;
+  const activeGrades = studentData?.grades || mockDb.gradeHistory;
+  const activeAttendance = studentData?.attendance || mockDb.attendanceData;
+  const activeTuition = studentData?.tuition || mockDb.currentTuition;
   
   if (msg.includes('성적') || msg.includes('학점') || msg.includes('gpa') || msg.includes('점수')) {
     let semester = undefined;
@@ -198,11 +203,11 @@ function handleFallbackIntent(message: string) {
       intent: 'get_grades',
       args: { semester },
       text: semester 
-        ? `홍길동 학생의 ${semester} 성적 조회 결과입니다.`
-        : '홍길동 학생의 전체 성적 단표 내역 및 GPA 정보입니다.',
+        ? `${activeProfile.name} 학생의 ${semester} 성적 조회 결과입니다.`
+        : `${activeProfile.name} 학생의 전체 성적 단표 내역 및 GPA 정보입니다.`,
       data: semester 
-        ? mockDb.gradeHistory.find(g => g.semesterName === semester) 
-        : mockDb.gradeHistory
+        ? activeGrades.find((g: any) => g.semesterName === semester) 
+        : activeGrades
     };
   }
 
@@ -247,7 +252,7 @@ function handleFallbackIntent(message: string) {
       args: {},
       text: '전자출결 관리 시스템의 출결 현황 및 공결 신청 내역입니다.',
       data: {
-        attendance: mockDb.attendanceData,
+        attendance: activeAttendance,
         officialLeaves: mockDb.officialLeaves
       }
     };
@@ -259,7 +264,7 @@ function handleFallbackIntent(message: string) {
       args: {},
       text: '등록금 납부 고지서 및 환불 신청 상세 내역입니다.',
       data: {
-        invoice: mockDb.currentTuition,
+        invoice: activeTuition,
         refunds: mockDb.refundRecords
       }
     };
@@ -290,7 +295,7 @@ function handleFallbackIntent(message: string) {
       data: {
         type,
         records: mockDb.academicRecords.filter(r => r.type === type),
-        profile: mockDb.studentProfile
+        profile: activeProfile
       }
     };
   }
@@ -329,8 +334,8 @@ function handleFallbackIntent(message: string) {
     return {
       intent: 'get_student_profile',
       args: {},
-      text: '학생 홍길동 님의 개인정보 및 지도교수 프로필 조회 결과입니다.',
-      data: mockDb.studentProfile
+      text: `학생 ${activeProfile.name} 님의 개인정보 및 지도교수 프로필 조회 결과입니다.`,
+      data: activeProfile
     };
   }
 
@@ -345,15 +350,20 @@ function handleFallbackIntent(message: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { message } = await req.json();
+    const { message, studentData } = await req.json();
 
     if (!message) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
+    const activeProfile = studentData?.profile || mockDb.studentProfile;
+    const activeGrades = studentData?.grades || mockDb.gradeHistory;
+    const activeAttendance = studentData?.attendance || mockDb.attendanceData;
+    const activeTuition = studentData?.tuition || mockDb.currentTuition;
+
     // 3. API Key가 설정되지 않은 경우 Fallback 모드로 즉각 응답 (로컬 데모 가능성)
     if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('your_api_key_here')) {
-      const fallbackResult = handleFallbackIntent(message);
+      const fallbackResult = handleFallbackIntent(message, studentData);
       return NextResponse.json({
         ...fallbackResult,
         isFallback: true,
@@ -376,14 +386,14 @@ export async function POST(req: NextRequest) {
     // 정확하게 작성하도록 함. (API 호출을 1회로 유지하기 위해 별도의 2차 호출 대신
     // 이 방식을 사용 — 무료 티어 분당 요청 한도가 매우 낮기 때문)
     const studentDatabase = {
-      studentProfile: mockDb.studentProfile,
+      studentProfile: activeProfile,
       academicRecords: mockDb.academicRecords,
       timetableData: mockDb.timetableData,
       syllabusData: mockDb.syllabusData,
-      attendanceData: mockDb.attendanceData,
+      attendanceData: activeAttendance,
       officialLeaves: mockDb.officialLeaves,
-      gradeHistory: mockDb.gradeHistory,
-      currentTuition: mockDb.currentTuition,
+      gradeHistory: activeGrades,
+      currentTuition: activeTuition,
       refundRecords: mockDb.refundRecords,
       externalLinks: mockDb.externalLinks,
       professorDirectory: mockDb.professorDirectory,
@@ -393,9 +403,9 @@ export async function POST(req: NextRequest) {
     };
 
     const systemPrompt = `당신은 원광대학교의 공식 학사정보 AI 어시스턴트입니다.
-학생의 이름은 홍길동, 학과는 컴퓨터공학과, 지도교수는 김교수입니다.
+학생의 이름은 ${activeProfile.name}, 학과는 ${activeProfile.major}, 지도교수는 ${activeProfile.advisor}입니다.
 
-아래는 홍길동 학생의 실제 학사 데이터베이스(JSON)입니다. "text" 답변을 작성할 때 반드시 이 데이터만 근거로 사용하고, 데이터에 없는 내용은 추측하지 마십시오.
+아래는 ${activeProfile.name} 학생의 실제 학사 데이터베이스(JSON)입니다. "text" 답변을 작성할 때 반드시 이 데이터만 근거로 사용하고, 데이터에 없는 내용은 추측하지 마십시오.
 
 학사 데이터베이스:
 ${JSON.stringify(studentDatabase)}
@@ -431,6 +441,7 @@ ${JSON.stringify(studentDatabase)}
 
 "text" 작성 규칙 (매우 중요):
 - 반드시 위 학사 데이터베이스에 있는 사실만 사용하고, 데이터에 없는 내용은 추측하지 마십시오.
+- 출결 데이터(attendanceData)의 'rate'는 출석률(%)을 의미합니다. 결석률이 아닙니다. 결석률은 (결석(absent) / 총시간(totalHours)) * 100 으로 따로 계산하여 답변해야 합니다. 출석률(rate)을 결석률로 잘못 대답하지 않도록 극도로 주의하십시오.
 - 질문이 "~맞아?", "~있나요?", "~인가요?", "~아니죠?"처럼 참/거짓(예/아니오) 판정을 요구하는 질문일 때만, 반드시 "예," 또는 "아니오,"로 문장을 시작한 뒤 근거(과목명, 요일, 교시, 교수, 강의실, 금액, 상태 등 구체적 사실)를 간단히 덧붙이십시오. "확인해 보세요" 같은 회피성 답변은 금지합니다.
 - 반대로 "몇", "누구", "어디", "언제", "무엇/뭐", "왜", "어떻게", "얼마"처럼 의문사가 포함되어 구체적인 정보(수량/이름/장소/시간/이유/방법 등)를 묻는 질문에는 "~요?"로 끝나더라도 예/아니오를 절대 붙이지 말고 바로 사실로만 답하십시오. 질문에 여러 개의 소질문이 섞여 있다면 그중 참/거짓 판정형인 부분에만 이 규칙을 적용하고, 의문사 질문 부분에는 적용하지 마십시오.
 - 한국어의 예/아니오는 객관적 사실이 아니라 "질문자가 말한 내용이 맞는지"를 기준으로 답해야 합니다. "~없지?", "~아니죠?", "~안 했나요?"처럼 부정으로 묻는 질문에는 영어와 반대 극성이 됩니다 — 실제로 없는 게 맞다면 "예, 없습니다"로, 실제로는 있다면 "아니오, 있습니다"로 시작하십시오.
@@ -459,7 +470,7 @@ ${JSON.stringify(studentDatabase)}
     if (!result) {
       // 모든 후보 모델이 실패한 경우에만 규칙 기반 Fallback으로 대체한다.
       console.error('모든 Gemini 모델 후보가 실패하여 규칙 기반 Fallback으로 전환:', lastError);
-      const fallbackResult = handleFallbackIntent(message);
+      const fallbackResult = handleFallbackIntent(message, studentData);
       const isQuotaError = lastError?.status === 429 || /quota|429/i.test(lastError?.message ?? '');
       const fallbackPayload = {
         ...fallbackResult,
@@ -499,18 +510,18 @@ ${JSON.stringify(studentDatabase)}
     if (intent) {
       switch (intent) {
         case 'get_student_profile':
-          data = mockDb.studentProfile;
-          text = text || '홍길동 님의 학생 프로필 정보입니다.';
+          data = activeProfile;
+          text = text || `${activeProfile.name} 님의 학생 프로필 정보입니다.`;
           break;
         case 'get_grades':
           {
             const sem = args.semester;
             if (sem) {
-              data = mockDb.gradeHistory.find(g => g.semesterName.includes(sem)) || mockDb.gradeHistory;
-              text = text || `홍길동 님의 ${sem} 성적 단표 내역입니다.`;
+              data = activeGrades.find((g: any) => g.semesterName.includes(sem)) || activeGrades;
+              text = text || `${activeProfile.name} 님의 ${sem} 성적 단표 내역입니다.`;
             } else {
-              data = mockDb.gradeHistory;
-              text = text || '홍길동 님의 전체 성적 확인 리스트 및 이수 성적 요약입니다.';
+              data = activeGrades;
+              text = text || `${activeProfile.name} 님의 전체 성적 확인 리스트 및 이수 성적 요약입니다.`;
             }
           }
           break;
@@ -530,14 +541,14 @@ ${JSON.stringify(studentDatabase)}
           break;
         case 'get_attendance':
           data = {
-            attendance: mockDb.attendanceData,
+            attendance: activeAttendance,
             officialLeaves: mockDb.officialLeaves
           };
           text = text || '전자출결 출결 정보 및 공결 신청 이력입니다.';
           break;
         case 'get_tuition_and_refund':
           data = {
-            invoice: mockDb.currentTuition,
+            invoice: activeTuition,
             refunds: mockDb.refundRecords
           };
           text = text || '등록금 고지서 내역 및 등록금 환불 신청/내역 정보입니다.';
@@ -556,7 +567,7 @@ ${JSON.stringify(studentDatabase)}
             data = {
               type,
               records: mockDb.academicRecords.filter(r => r.type === type),
-              profile: mockDb.studentProfile
+              profile: activeProfile
             };
             text = text || `요청하신 ${type === 'leave' ? '휴학' : type === 'return' ? '복학' : '자퇴'} 신청 안내 및 현황 정보입니다.`;
           }
