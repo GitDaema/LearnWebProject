@@ -33,9 +33,9 @@ export default function TimetableCard({ data }: TimetableCardProps) {
     return data.filter((item) => {
       const matchGrade = selectedGrade === 'all' || item.grade === selectedGrade;
       const matchClass = selectedClass === 'all' || item.classification === selectedClass;
-      
+
       const cleanSearch = searchTerm.trim().toLowerCase();
-      const matchSearch = !cleanSearch || 
+      const matchSearch = !cleanSearch ||
         item.subject.toLowerCase().includes(cleanSearch) ||
         item.professor.toLowerCase().includes(cleanSearch) ||
         item.code.toLowerCase().includes(cleanSearch);
@@ -185,8 +185,8 @@ export default function TimetableCard({ data }: TimetableCardProps) {
       <div className="lg:hidden space-y-3">
         {filteredSubjects.length > 0 ? (
           filteredSubjects.map((item) => (
-            <div 
-              key={`${item.code}-${item.classGroup}`} 
+            <div
+              key={`${item.code}-${item.classGroup}`}
               className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-4 shadow-sm hover:border-blue-400/50 transition-all flex flex-col gap-2.5 relative"
             >
               {/* Badge line */}

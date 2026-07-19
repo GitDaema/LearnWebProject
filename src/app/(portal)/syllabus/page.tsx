@@ -1,15 +1,36 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import SyllabusCard from '@/components/cards/SyllabusCard';
-import { syllabusData } from '@/data/mockData';
+import EnrollmentSummaryCard from '@/components/cards/EnrollmentSummaryCard';
+import CourseEvaluationCard from '@/components/cards/CourseEvaluationCard';
+import { syllabusData, courseRegistrations, enrollmentCreditLimit } from '@/data/mockData';
 
-export default function SyllabusPage() {
+type SyllabusView = 'plan' | 'enrollment' | 'evaluation';
+
+function SyllabusContent() {
+  const searchParams = useSearchParams();
+  const [view, setView] = useState<SyllabusView>('plan');
+
+  useEffect(() => {
+    const viewParam = searchParams.get('view');
+    setView(viewParam === 'enrollment' || viewParam === 'evaluation' ? viewParam : 'plan');
+  }, [searchParams]);
+
   const [selectedCode, setSelectedCode] = useState(syllabusData[0].code);
   const selected = syllabusData.find(s => s.code === selectedCode) ?? syllabusData[0];
 
+  if (view === 'enrollment') {
+    return <EnrollmentSummaryCard registrations={courseRegistrations} creditLimit={enrollmentCreditLimit} />;
+  }
+
+  if (view === 'evaluation') {
+    return <CourseEvaluationCard data={courseRegistrations} />;
+  }
+
   return (
-    <div className="max-w-5xl w-full mx-auto space-y-4">
+    <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         {syllabusData.map((s) => (
           <button
@@ -26,6 +47,16 @@ export default function SyllabusPage() {
         ))}
       </div>
       <SyllabusCard data={selected} />
+    </div>
+  );
+}
+
+export default function SyllabusPage() {
+  return (
+    <div className="max-w-5xl w-full mx-auto">
+      <Suspense fallback={<div className="text-slate-550 text-xs font-bold p-4 text-center">로딩 중...</div>}>
+        <SyllabusContent />
+      </Suspense>
     </div>
   );
 }

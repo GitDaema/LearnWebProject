@@ -28,7 +28,23 @@ export interface DepartmentSubject {
   credits: number;          // 학점
   time: string;             // 시간
   professor: string;        // 담당교수
+  professorId: string;      // 담당교수 사번 (professorDirectory 참조)
   classroom: string;        // 강의실
+}
+
+export interface Professor {
+  id: string;          // 사번
+  name: string;
+  department: string;  // 소속학과
+}
+
+export interface GraduationRequirement {
+  major: string;
+  totalCreditsRequired: number;
+  majorCreditsRequired: number;
+  generalCreditsRequired: number;
+  requiredMajorCourses: { code: string; subject: string; credits: number }[]; // 졸업을 위해 반드시 이수해야 하는 전공필수 과목
+  requiredGeneralCourses: { code: string; subject: string; credits: number }[]; // 졸업을 위해 반드시 이수해야 하는 교양필수 과목
 }
 
 export interface Syllabus {
@@ -125,7 +141,7 @@ export const studentProfile: StudentProfile = {
   major: '컴퓨터공학과',
   grade: 3,
   semester: 1,
-  advisor: '김교수',
+  advisor: '김민준',
   status: '재학',
   email: 'gildong.hong@univ.ac.kr',
   phone: '010-1234-5678',
@@ -146,28 +162,53 @@ export const academicRecords: AcademicRecord[] = [
   },
 ];
 
+export const professorDirectory: Professor[] = [
+  // 컴퓨터공학과 (timetableData/syllabusData/courseRegistrations에서 실제로 강의를 담당하는 교수)
+  { id: 'F1001', name: '박준영', department: '컴퓨터공학과' },
+  { id: 'F1002', name: '이서준', department: '컴퓨터공학과' },
+  { id: 'F1003', name: '김민준', department: '컴퓨터공학과' },
+  { id: 'F1004', name: '최지훈', department: '컴퓨터공학과' },
+  { id: 'F1005', name: '정하윤', department: '컴퓨터공학과' },
+  { id: 'F1006', name: '김철수', department: '컴퓨터공학과' },
+  // 타 학과 교수 (이번 학기 개설 강의는 없지만 검색/조회 대상에는 포함됨)
+  { id: 'F2001', name: '김민준', department: '전자공학과' }, // 컴퓨터공학과 김민준(F1003)과의 동명이인 예시
+  { id: 'F2002', name: '박서연', department: '기계공학과' },
+  { id: 'F2003', name: '최유진', department: '경영학과' },
+  { id: 'F2004', name: '정다은', department: '수학과' },
+  { id: 'F2005', name: '강태현', department: '물리학과' },
+  { id: 'F2006', name: '윤소희', department: '화학공학과' },
+  { id: 'F2007', name: '임재현', department: '영어영문학과' },
+  { id: 'F2008', name: '한지민', department: '건축학과' },
+  { id: 'F2009', name: '오승훈', department: '신소재공학과' },
+  { id: 'F2010', name: '신예은', department: '간호학과' },
+  { id: 'F2011', name: '조민석', department: '법학과' },
+  { id: 'F2012', name: '배수아', department: '심리학과' },
+  { id: 'F2013', name: '홍성민', department: '국어국문학과' },
+  { id: 'F2014', name: '서지훈', department: '산업디자인학과' },
+];
+
 export const timetableData: DepartmentSubject[] = [
-  { grade: 1, classification: '기전', code: 'CS101', subject: 'C프로그래밍실습', classGroup: 'A', credits: 3, time: '월 1,2 / 화 3', professor: '박교수', classroom: 'IT관 101호' },
-  { grade: 1, classification: '기전', code: 'CS101', subject: 'C프로그래밍실습', classGroup: 'B', credits: 3, time: '월 3,4 / 화 4', professor: '이교수', classroom: 'IT관 102호' },
-  { grade: 1, classification: '교필', code: 'CS103', subject: '컴퓨터학개론', classGroup: 'A', credits: 2, time: '목 1,2', professor: '김교수', classroom: '공학관 201호' },
-  { grade: 2, classification: '전필', code: 'CS201', subject: '자료구조', classGroup: 'A', credits: 3, time: '수 3,4 / 금 1', professor: '이교수', classroom: '공학관 403호' },
-  { grade: 2, classification: '전필', code: 'CS208', subject: '객체지향프로그래밍', classGroup: 'A', credits: 3, time: '화 1,2 / 목 3', professor: '최교수', classroom: 'IT관 205호' },
-  { grade: 2, classification: '전선', code: 'CS205', subject: '이산수학', classGroup: 'A', credits: 3, time: '월 5,6', professor: '김교수', classroom: '공학관 301호' },
-  { grade: 3, classification: '전필', code: 'CS301', subject: '알고리즘', classGroup: 'A', credits: 3, time: '월 1,2 / 수 5', professor: '김철수', classroom: '공학관 402호' },
-  { grade: 3, classification: '전선', code: 'CS302', subject: '웹프로그래밍', classGroup: 'A', credits: 3, time: '화 3,4,5', professor: '박교수', classroom: 'IT관 203호' },
-  { grade: 3, classification: '전선', code: 'CS302', subject: '웹프로그래밍', classGroup: 'B', credits: 3, time: '화 6,7,8', professor: '정교수', classroom: 'IT관 204호' },
-  { grade: 3, classification: '전필', code: 'CS305', subject: '인공지능개론', classGroup: 'A', credits: 3, time: '수 1,2 / 금 5', professor: '이교수', classroom: '공학관 501호' },
-  { grade: 3, classification: '전선', code: 'CS308', subject: '컴퓨터네트워크', classGroup: 'A', credits: 3, time: '목 6,7 / 금 6', professor: '최교수', classroom: '공학관 301호' },
-  { grade: 4, classification: '전필', code: 'CS401', subject: '캡스톤디자인', classGroup: 'A', credits: 3, time: '수 6,7,8', professor: '정교수', classroom: '공학관 502호' },
-  { grade: 4, classification: '전선', code: 'CS405', subject: '클라우드컴퓨팅', classGroup: 'A', credits: 3, time: '목 1,2,3', professor: '박교수', classroom: 'IT관 304호' },
-  { grade: 4, classification: '전선', code: 'CS408', subject: '정보보안론', classGroup: 'A', credits: 3, time: '금 1,2,3', professor: '이교수', classroom: 'IT관 305호' }
+  { grade: 1, classification: '기전', code: 'CS101', subject: 'C프로그래밍실습', classGroup: 'A', credits: 3, time: '월 1,2 / 화 3', professor: '박준영', professorId: 'F1001', classroom: 'IT관 101호' },
+  { grade: 1, classification: '기전', code: 'CS101', subject: 'C프로그래밍실습', classGroup: 'B', credits: 3, time: '월 3,4 / 화 4', professor: '이서준', professorId: 'F1002', classroom: 'IT관 102호' },
+  { grade: 1, classification: '교필', code: 'CS103', subject: '컴퓨터학개론', classGroup: 'A', credits: 2, time: '목 1,2', professor: '김민준', professorId: 'F1003', classroom: '공학관 201호' },
+  { grade: 2, classification: '전필', code: 'CS201', subject: '자료구조', classGroup: 'A', credits: 3, time: '수 3,4 / 금 1', professor: '이서준', professorId: 'F1002', classroom: '공학관 403호' },
+  { grade: 2, classification: '전필', code: 'CS208', subject: '객체지향프로그래밍', classGroup: 'A', credits: 3, time: '화 1,2 / 목 3', professor: '최지훈', professorId: 'F1004', classroom: 'IT관 205호' },
+  { grade: 2, classification: '전선', code: 'CS205', subject: '이산수학', classGroup: 'A', credits: 3, time: '월 5,6', professor: '김민준', professorId: 'F1003', classroom: '공학관 301호' },
+  { grade: 3, classification: '전필', code: 'CS301', subject: '알고리즘', classGroup: 'A', credits: 3, time: '월 1,2 / 수 5', professor: '김철수', professorId: 'F1006', classroom: '공학관 402호' },
+  { grade: 3, classification: '전선', code: 'CS302', subject: '웹프로그래밍', classGroup: 'A', credits: 3, time: '화 3,4,5', professor: '박준영', professorId: 'F1001', classroom: 'IT관 203호' },
+  { grade: 3, classification: '전선', code: 'CS302', subject: '웹프로그래밍', classGroup: 'B', credits: 3, time: '화 6,7,8', professor: '정하윤', professorId: 'F1005', classroom: 'IT관 204호' },
+  { grade: 3, classification: '전필', code: 'CS305', subject: '인공지능개론', classGroup: 'A', credits: 3, time: '수 1,2 / 금 5', professor: '이서준', professorId: 'F1002', classroom: '공학관 501호' },
+  { grade: 3, classification: '전선', code: 'CS308', subject: '컴퓨터네트워크', classGroup: 'A', credits: 3, time: '목 6,7 / 금 6', professor: '최지훈', professorId: 'F1004', classroom: '공학관 301호' },
+  { grade: 4, classification: '전필', code: 'CS401', subject: '캡스톤디자인', classGroup: 'A', credits: 3, time: '수 6,7,8', professor: '정하윤', professorId: 'F1005', classroom: '공학관 502호' },
+  { grade: 4, classification: '전선', code: 'CS405', subject: '클라우드컴퓨팅', classGroup: 'A', credits: 3, time: '목 1,2,3', professor: '박준영', professorId: 'F1001', classroom: 'IT관 304호' },
+  { grade: 4, classification: '전선', code: 'CS408', subject: '정보보안론', classGroup: 'A', credits: 3, time: '금 1,2,3', professor: '이서준', professorId: 'F1002', classroom: 'IT관 305호' }
 ];
 
 export const syllabusData: Syllabus[] = [
   {
     code: 'CS301',
     subject: '알고리즘',
-    professor: '김교수',
+    professor: '김철수',
     credits: 3,
     classroom: '공학관 402호',
     schedule: '월 1,2교시',
@@ -193,7 +234,7 @@ export const syllabusData: Syllabus[] = [
   {
     code: 'CS302',
     subject: '웹프로그래밍',
-    professor: '박교수',
+    professor: '박준영',
     credits: 3,
     classroom: 'IT관 203호',
     schedule: '화 3,4,5교시',
@@ -219,12 +260,14 @@ export const syllabusData: Syllabus[] = [
 ];
 
 export const courseRegistrations: CourseRegistration[] = [
-  { code: 'CS301', subject: '알고리즘', professor: '김교수', credits: 3, schedule: '월 1,2', classroom: '공학관 402호', evaluated: true },
-  { code: 'CS302', subject: '웹프로그래밍', professor: '박교수', credits: 3, schedule: '화 3,4,5', classroom: 'IT관 203호', evaluated: false },
-  { code: 'CS305', subject: '인공지능개론', professor: '이교수', credits: 3, schedule: '수 1,2', classroom: '공학관 501호', evaluated: true },
-  { code: 'CS308', subject: '컴퓨터네트워크', professor: '최교수', credits: 3, schedule: '목 6,7', classroom: '공학관 301호', evaluated: false },
-  { code: 'CS310', subject: '데이터베이스', professor: '정교수', credits: 3, schedule: '금 2,3,4', classroom: 'IT관 305호', evaluated: false },
+  { code: 'CS301', subject: '알고리즘', professor: '김철수', credits: 3, schedule: '월 1,2', classroom: '공학관 402호', evaluated: true },
+  { code: 'CS302', subject: '웹프로그래밍', professor: '박준영', credits: 3, schedule: '화 3,4,5', classroom: 'IT관 203호', evaluated: false },
+  { code: 'CS305', subject: '인공지능개론', professor: '이서준', credits: 3, schedule: '수 1,2', classroom: '공학관 501호', evaluated: true },
+  { code: 'CS308', subject: '컴퓨터네트워크', professor: '최지훈', credits: 3, schedule: '목 6,7', classroom: '공학관 301호', evaluated: false },
+  { code: 'CS310', subject: '데이터베이스', professor: '정하윤', credits: 3, schedule: '금 2,3,4', classroom: 'IT관 305호', evaluated: false },
 ];
+
+export const enrollmentCreditLimit = 21; // 이번 학기 신청 가능 최대 학점
 
 export const attendanceData: AttendanceItem[] = [
   { subject: '알고리즘', totalHours: 30, attended: 28, late: 1, absent: 1, excused: 0, rate: 93.3 },
@@ -281,6 +324,30 @@ export const gradeHistory: SemesterGrade[] = [
     ],
   },
 ];
+
+export const graduationRequirement: GraduationRequirement = {
+  major: '컴퓨터공학과',
+  totalCreditsRequired: 130,
+  majorCreditsRequired: 66,
+  generalCreditsRequired: 37,
+  requiredMajorCourses: [
+    { code: 'CS201', subject: '자료구조', credits: 3 },
+    { code: 'CS203', subject: '컴퓨터구조', credits: 3 },
+    { code: 'CS208', subject: '객체지향프로그래밍', credits: 3 },
+    { code: 'CS251', subject: '운영체제', credits: 3 },
+    { code: 'CS253', subject: '소프트웨어공학', credits: 3 },
+    { code: 'CS260', subject: '창의융합설계', credits: 3 },
+    { code: 'CS301', subject: '알고리즘', credits: 3 },
+    { code: 'CS305', subject: '인공지능개론', credits: 3 },
+    { code: 'CS401', subject: '캡스톤디자인', credits: 3 },
+  ],
+  requiredGeneralCourses: [
+    { code: 'MATH101', subject: '선형대수학', credits: 3 },
+    { code: 'ENG201', subject: '대학실용영어', credits: 3 },
+    { code: 'MATH202', subject: '확률및통계', credits: 3 },
+    { code: 'KOR101', subject: '글쓰기와토론', credits: 3 },
+  ],
+};
 
 export const currentTuition: TuitionInvoice = {
   semesterName: '2026학년도 1학기',

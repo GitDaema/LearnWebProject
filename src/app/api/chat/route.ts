@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI, FunctionDeclaration } from '@google/generative-ai';
 import * as mockDb from '@/data/mockData';
+import dns from 'dns';
+
+dns.setDefaultResultOrder('ipv4first');
 
 // API Key 획득 (서버 환경변수)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
@@ -124,6 +127,26 @@ const requestAcademicChangeTool: FunctionDeclaration = {
   },
 };
 
+const getCourseRegistrationTool: FunctionDeclaration = {
+  name: 'get_course_registration',
+  description: '홍길동의 수강신청 완료 내역, 신청 학점, 이번 학기 수강신청 성공 여부 등을 조회합니다. "나 수강신청 몇 학점 했어?", "수강신청 성공했나?", "앞으로 몇 학점 더 신청 가능해?" 등의 질문에 매핑됩니다.',
+};
+
+const getProfessorTimetableTool: FunctionDeclaration = {
+  name: 'get_professor_timetable',
+  description: '교수 시간표 및 강의 교실을 조회합니다. "김민준 교수님 시간표 알려줘", "이서준 교수님 언제 수업 있어?", "정하윤 교수님 강의실 어디야?" 등의 질문에 매핑됩니다.',
+  parameters: {
+    type: 'OBJECT' as any,
+    properties: {
+      professor_name: {
+        type: 'STRING' as any,
+        description: '조회할 교수님의 이름 (예: "김민준", "이서준", "정하윤" 등)',
+      },
+    },
+    required: ['professor_name'],
+  },
+};
+
 const getExternalLinkTool: FunctionDeclaration = {
   name: 'get_external_link',
   description: '웹메일, 수강신청관리, 봉황BBS, LLM 서비스, 인터넷발급, 우편발급 등 외부 연동 서비스나 외부 링크로 연결하는 정보를 조회합니다. "웹메일 바로가기", "수강신청 하려면 어디로 가?", "인터넷 증명발급 링크", "비밀번호 변경" 등에 매핑됩니다.',
@@ -184,6 +207,23 @@ function handleFallbackIntent(message: string) {
   }
 
   if (msg.includes('시간표') || msg.includes('수업') || msg.includes('요일') || msg.includes('강의실') || msg.includes('교시') || msg.includes('개설') || msg.includes('과목')) {
+    // 교수 시간표 질문인 경우 폴백 처리
+    const hasProfName = mockDb.professorDirectory.some(p => msg.includes(p.name));
+    const hasProfWord = msg.includes('교수') || msg.includes('교수님');
+    if (hasProfName || hasProfWord) {
+      const matchedProf = mockDb.professorDirectory.find(p => msg.includes(p.name)) || mockDb.professorDirectory[0];
+      return {
+        intent: 'get_professor_timetable',
+        args: { professor_name: matchedProf.name },
+        text: `${matchedProf.name} 교수님의 담당 시간표 및 강의실 조회 결과입니다.`,
+        data: {
+          directory: mockDb.professorDirectory,
+          schedule: mockDb.timetableData,
+          selectedProfessor: matchedProf
+        }
+      };
+    }
+
     const gradeParam = msg.includes('1학년') ? 1 : msg.includes('2학년') ? 2 : msg.includes('3학년') ? 3 : msg.includes('4학년') ? 4 : undefined;
     const classParam = msg.includes('전필') ? '전필' : msg.includes('전선') ? '전선' : msg.includes('기전') ? '기전' : msg.includes('교필') ? '교필' : msg.includes('교선') ? '교선' : undefined;
 
@@ -251,6 +291,18 @@ function handleFallbackIntent(message: string) {
         type,
         records: mockDb.academicRecords.filter(r => r.type === type),
         profile: mockDb.studentProfile
+      }
+    };
+  }
+
+  if (msg.includes('수강신청') && (msg.includes('학점') || msg.includes('내역') || msg.includes('성공') || msg.includes('결과') || msg.includes('과목'))) {
+    return {
+      intent: 'get_course_registration',
+      args: {},
+      text: '이번 학기 수강신청 신청 내역 및 신청 가능 학점 현황입니다.',
+      data: {
+        registrations: mockDb.courseRegistrations,
+        creditLimit: mockDb.enrollmentCreditLimit
       }
     };
   }
@@ -334,6 +386,10 @@ export async function POST(req: NextRequest) {
       currentTuition: mockDb.currentTuition,
       refundRecords: mockDb.refundRecords,
       externalLinks: mockDb.externalLinks,
+      professorDirectory: mockDb.professorDirectory,
+      courseRegistrations: mockDb.courseRegistrations,
+      enrollmentCreditLimit: mockDb.enrollmentCreditLimit,
+      graduationRequirement: mockDb.graduationRequirement,
     };
 
     const systemPrompt = `당신은 원광대학교의 공식 학사정보 AI 어시스턴트입니다.
@@ -348,14 +404,15 @@ ${JSON.stringify(studentDatabase)}
 
 응답 JSON 포맷 스키마:
 {
-  "intent": "get_student_profile" | "get_grades" | "get_timetable" | "get_attendance" | "get_tuition_and_refund" | "get_syllabus" | "request_academic_change" | "get_external_link" | null,
+  "intent": "get_student_profile" | "get_grades" | "get_timetable" | "get_attendance" | "get_tuition_and_refund" | "get_syllabus" | "request_academic_change" | "get_external_link" | "get_course_registration" | "get_professor_timetable" | null,
   "args": {
     "semester": "2025학년도 1학기" 등 (get_grades인 경우에만 설정, 없으면 생략),
     "grade": 1 등 (get_timetable인 경우에만 설정, 없으면 생략),
     "classification": "전필" 등 (get_timetable인 경우에만 설정, 없으면 생략),
     "subject": "알고리즘" 등 (get_syllabus인 경우에만 설정, 없으면 생략),
     "type": "leave" | "return" | "dropout" (request_academic_change인 경우에만 설정, 없으면 생략),
-    "service_name": "웹메일" 등 (get_external_link인 경우에만 설정, 없으면 생략)
+    "service_name": "웹메일" 등 (get_external_link인 경우에만 설정, 없으면 생략),
+    "professor_name": "김민준" 등 (get_professor_timetable인 경우에만 설정, 없으면 생략)
   },
   "text": "사용자 질문에 대한 답변 (한국어, 아래 규칙 준수)"
 }
@@ -369,6 +426,8 @@ ${JSON.stringify(studentDatabase)}
 - "get_syllabus": 강의계획서 검색 (args.subject에 과목명 필수 설정)
 - "request_academic_change": 휴학, 복학, 자퇴 신청 (args.type에 "leave", "return", "dropout" 중 필수 설정)
 - "get_external_link": 웹메일, 수강신청, 증명발급, 봉황BBS 등 외부 링크 및 비밀번호 변경 (args.service_name에 해당 명칭 필수 설정)
+- "get_course_registration": 이번 학기 수강신청 성공 내역, 신청 학점, 잔여 가능 학점 조회
+- "get_professor_timetable": 특정 교수 시간표, 개설 강의 시간 및 요일, 강의실 조회 (args.professor_name에 교수 이름 필수 설정)
 
 "text" 작성 규칙 (매우 중요):
 - 반드시 위 학사 데이터베이스에 있는 사실만 사용하고, 데이터에 없는 내용은 추측하지 마십시오.
@@ -466,7 +525,7 @@ ${JSON.stringify(studentDatabase)}
               return matchGrade && matchClass;
             });
 
-            text = describeTimetable(message, gradeParam, classParam, data);
+            text = text || describeTimetable(message, gradeParam, classParam, data);
           }
           break;
         case 'get_attendance':
@@ -509,6 +568,25 @@ ${JSON.stringify(studentDatabase)}
             const link = mockDb.externalLinks.find(l => l.name.includes(name) || l.category.includes(name)) || mockDb.externalLinks[0];
             data = link;
             text = text || `요청하신 [${link.name}] 서비스 연결 정보입니다. 아래 버튼을 클릭하여 이동하세요.`;
+          }
+          break;
+        case 'get_course_registration':
+          data = {
+            registrations: mockDb.courseRegistrations,
+            creditLimit: mockDb.enrollmentCreditLimit
+          };
+          text = text || '이번 학기 수강신청 내역 및 신청 가능 학점 정보입니다.';
+          break;
+        case 'get_professor_timetable':
+          {
+            const profName = args.professor_name || '';
+            const matchedProf = mockDb.professorDirectory.find(p => p.name.includes(profName)) || mockDb.professorDirectory[0];
+            data = {
+              directory: mockDb.professorDirectory,
+              schedule: mockDb.timetableData,
+              selectedProfessor: matchedProf
+            };
+            text = text || `${matchedProf.name} 교수님의 담당 시간표 및 강의실 정보입니다.`;
           }
           break;
       }
