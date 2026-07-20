@@ -61,23 +61,23 @@ export default function LoginScreen() {
     return 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20 bg-emerald-50/5';
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
     setError('');
-    const result = login(id, pw);
+    const result = await login(id, pw);
     if (!result.success) {
       setError(result.error || '로그인에 실패했습니다.');
     }
   };
 
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
     setError('');
     setSuccess('');
 
-    const result = signup(id, pw, name);
+    const result = await signup(id, pw, name);
     if (result.success) {
       setSuccess('회원가입이 완료되었습니다! 자동으로 로그인합니다.');
     } else {

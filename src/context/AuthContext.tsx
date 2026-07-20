@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 import {
   StudentProfile, SemesterGrade, AttendanceItem, TuitionInvoice,
   studentProfile as defaultProfile, gradeHistory as defaultGrades,
@@ -210,9 +211,9 @@ interface AuthContextType {
   currentUser: User | null;
   studentData: StudentData;
   isLoading: boolean;
-  login: (id: string, pw: string) => { success: boolean; error?: string };
-  logout: () => void;
-  signup: (id: string, pw: string, name: string) => { success: boolean; error?: string };
+  login: (id: string, pw: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  signup: (id: string, pw: string, name: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -223,49 +224,94 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   useEffect(() => {
-    // 로컬스토리지에서 현재 로그인 정보 읽기
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
+    // 1. 초기 세션 로드 및 사용자 정보 복원
+    const initAuth = async () => {
       try {
-        setCurrentUser(JSON.parse(storedUser));
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const userMetadata = session.user.user_metadata;
+          const email = session.user.email || '';
+          const id = email.split('@')[0];
+          setCurrentUser({
+            id: id,
+            name: userMetadata?.name || '',
+            studentType: userMetadata?.studentType || 'C',
+            studentId: userMetadata?.studentId || '20240003',
+          });
+        }
       } catch (e) {
-        localStorage.removeItem('currentUser');
+        console.error('Failed to initialize session:', e);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+
+    initAuth();
+
+    // 2. 세션 변화 감지 리스너 등록
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          const userMetadata = session.user.user_metadata;
+          const email = session.user.email || '';
+          const id = email.split('@')[0];
+          setCurrentUser({
+            id: id,
+            name: userMetadata?.name || '',
+            studentType: userMetadata?.studentType || 'C',
+            studentId: userMetadata?.studentId || '20240003',
+          });
+        } else {
+          setCurrentUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = (id: string, pw: string) => {
-    const rawUsers = localStorage.getItem('users');
-    const users: Record<string, { pw: string; user: User }> = rawUsers ? JSON.parse(rawUsers) : {};
+  const login = async (id: string, pw: string) => {
+    const trimmedId = id.trim().toLowerCase();
+    const email = `${trimmedId}@gitdaema.univ`;
 
-    const target = users[id.trim().toLowerCase()];
-    if (!target) {
-      return { success: false, error: '존재하지 않는 아이디입니다.' };
-    }
-    if (target.pw !== pw) {
-      return { success: false, error: '비밀번호가 일치하지 않습니다.' };
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: pw,
+    });
+
+    if (error) {
+      let errorMsg = error.message;
+      if (error.message.includes('Invalid login credentials')) {
+        errorMsg = '아이디 또는 비밀번호가 일치하지 않습니다.';
+      }
+      return { success: false, error: errorMsg };
     }
 
-    setCurrentUser(target.user);
-    localStorage.setItem('currentUser', JSON.stringify(target.user));
+    if (data?.user) {
+      const userMetadata = data.user.user_metadata;
+      setCurrentUser({
+        id: trimmedId,
+        name: userMetadata?.name || '',
+        studentType: userMetadata?.studentType || 'C',
+        studentId: userMetadata?.studentId || '20240003',
+      });
+    }
+
     return { success: true };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setCurrentUser(null);
-    localStorage.removeItem('currentUser');
     router.push('/');
   };
 
-  const signup = (id: string, pw: string, name: string) => {
+  const signup = async (id: string, pw: string, name: string) => {
     const trimmedId = id.trim().toLowerCase();
-    const rawUsers = localStorage.getItem('users');
-    const users: Record<string, { pw: string; user: User }> = rawUsers ? JSON.parse(rawUsers) : {};
-
-    if (users[trimmedId]) {
-      return { success: false, error: '이미 존재하는 아이디입니다.' };
-    }
+    const email = `${trimmedId}@gitdaema.univ`;
 
     // 아이디 유효성 검사 (영문+숫자 혼용, 6~12자)
     const idRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,12}$/;
@@ -299,18 +345,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    const newUser: User = {
-      id: trimmedId,
-      name: name.trim(),
-      studentType,
-      studentId
-    };
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: pw,
+      options: {
+        data: {
+          name: name.trim(),
+          studentType,
+          studentId,
+        },
+      },
+    });
 
-    users[trimmedId] = { pw, user: newUser };
-    localStorage.setItem('users', JSON.stringify(users));
+    if (error) {
+      let errorMsg = error.message;
+      if (error.message.includes('User already registered')) {
+        errorMsg = '이미 존재하는 아이디입니다.';
+      }
+      return { success: false, error: errorMsg };
+    }
 
-    setCurrentUser(newUser);
-    localStorage.setItem('currentUser', JSON.stringify(newUser));
+    if (data?.user) {
+      setCurrentUser({
+        id: trimmedId,
+        name: name.trim(),
+        studentType,
+        studentId,
+      });
+    }
 
     return { success: true };
   };
